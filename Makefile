@@ -2,7 +2,7 @@ CC = riscv32-unknown-linux-gnu-gcc
 LINK = riscv32-unknown-linux-gnu-ld
 
 
-CFLAGS = -Wall -fPIC -fno-builtin -std=c11 -g 
+CFLAGS = -Wall -Werror -fPIC -fno-builtin -std=c11 -g 
 LDFLAGS = -static
 
 OPTION_FLAGS = -DportasmHANDLE_INTERRUPT=interrupt_handler
@@ -20,4 +20,7 @@ ASM_SRCS = portASM.S
 all: $(TARGET)
 
 $(TARGET): 
-	$(CC) -o $(TARGET) $(CFLAGS) $(SRCS) $(ASM_SRCS) -T flash.lds $(LDFLAGS) 
+	$(CC) -o $(TARGET) $(CFLAGS) $(SRCS) $(ASM_SRCS) -T flash.lds $(LDFLAGS)
+
+clean:
+	rm $(TARGET)  
