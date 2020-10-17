@@ -69,6 +69,7 @@
 
 #include "freertos_risc_v_chip_specific_extensions.h"
 
+
 /* Check the freertos_risc_v_chip_specific_extensions.h and/or command line
 definitions. */
 #if defined( portasmHAS_CLINT ) && defined( portasmHAS_MTIME )
@@ -92,6 +93,8 @@ definitions. */
 #ifndef portasmHAS_SIFIVE_CLINT
 	#define portasmHAS_SIFIVE_CLINT 0
 #endif
+
+
 
 /* Only the standard core registers are stored by default.  Any additional
 registers must be saved by the portasmSAVE_ADDITIONAL_REGISTERS and
