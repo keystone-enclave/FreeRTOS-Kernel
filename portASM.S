@@ -102,10 +102,10 @@ portasmRESTORE_ADDITIONAL_REGISTERS macros - which can be defined in a chip
 specific version of freertos_risc_v_chip_specific_extensions.h.  See the notes
 at the top of this file. */
 #define portCONTEXT_SIZE ( 30 * portWORD_SIZE )
-
 .global xPortStartFirstTask
 .global freertos_risc_v_trap_handler
 .global pxPortInitialiseStack
+.global _start
 .extern pxCurrentTCB
 .extern ulPortTrapHandler
 .extern vTaskSwitchContext
@@ -116,6 +116,24 @@ at the top of this file. */
 .extern uxTimerIncrementsForOneTick /* size_t type so 32-bit on 32-bit core and 64-bits on 64-bit core. */
 .extern xISRStackTop
 .extern portasmHANDLE_INTERRUPT
+
+
+.text 
+.align 8
+.func
+_start:
+  la sp, __stack_top
+
+  /* set sscratch zero so that the trap handler can
+   * notice that the trap is from S-mode */
+  csrw sscratch, x0
+
+
+  /* start running enclave */
+  csrrw sp, sscratch, sp
+  sret
+  .endfunc
+
 
 /*-----------------------------------------------------------*/
 
