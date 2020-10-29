@@ -20,7 +20,7 @@ ASM_SRCS = portASM.S
 all: $(TARGET)
 
 $(TARGET): 
-	$(CC) -o $(TARGET) $(CFLAGS) $(SRCS) $(ASM_SRCS) -T rtos.lds $(LDFLAGS)
+	$(CC) -o $(TARGET) $(CFLAGS) $(ASM_SRCS) $(SRCS) -T rtos.lds $(LDFLAGS)
 
 clean:
 	rm $(TARGET)  
