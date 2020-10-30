@@ -1,14 +1,15 @@
 OUTPUT_ARCH( "riscv" )
-ENTRY( _start )
+ENTRY( setup_rtos )
 
 
 SECTIONS
 {
-  . = 0xffffffffc0000000;
+  . = 0x80400000;
   PROVIDE(rtos_base = .);
   .text : {
-    *(.text._start)
-    *(.text)
+    *(.text.setup_rtos)
+    *(.text.main)
+    *(.text) 
   }
   . = ALIGN(0x1000);
   .rodata :
@@ -28,7 +29,7 @@ SECTIONS
   {
     PROVIDE_HIDDEN (__init_array_start = .);
     KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
-    KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
+  /*  KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors)) */
     PROVIDE_HIDDEN (__init_array_end = .);
   }
 

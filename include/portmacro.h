@@ -29,6 +29,8 @@
 #ifndef PORTMACRO_H
 #define PORTMACRO_H
 
+#include "sbi.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -104,8 +106,10 @@ extern void vTaskExitCritical( void );
 
 #define portSET_INTERRUPT_MASK_FROM_ISR() 0
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedStatusValue ) ( void ) uxSavedStatusValue
-#define portDISABLE_INTERRUPTS()	__asm volatile( "csrc mstatus, 8" )
-#define portENABLE_INTERRUPTS()		__asm volatile( "csrs mstatus, 8" )
+#define portDISABLE_INTERRUPTS()	DISABLE_INTERRUPTS()
+// __asm volatile( "csrc mstatus, 8" )
+#define portENABLE_INTERRUPTS()		ENABLE_INTERRUPTS() 
+//__asm volatile( "csrs mstatus, 8" )
 #define portENTER_CRITICAL()	vTaskEnterCritical()
 #define portEXIT_CRITICAL()		vTaskExitCritical()
 

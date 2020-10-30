@@ -105,7 +105,7 @@ at the top of this file. */
 .global xPortStartFirstTask
 .global freertos_risc_v_trap_handler
 .global pxPortInitialiseStack
-.global _start
+.global setup_rtos
 .extern pxCurrentTCB
 .extern ulPortTrapHandler
 .extern vTaskSwitchContext
@@ -121,17 +121,10 @@ at the top of this file. */
 .text 
 .align 8
 .func
-_start:
+setup_rtos:
   la sp, __stack_top
+  jal main
 
-  /* set sscratch zero so that the trap handler can
-   * notice that the trap is from S-mode */
-  csrw sscratch, x0
-
-
-  /* start running enclave */
-  csrrw sp, sscratch, sp
-  sret
   .endfunc
 
 
@@ -170,7 +163,7 @@ freertos_risc_v_trap_handler:
 	store_x x30, 27 * portWORD_SIZE( sp )
 	store_x x31, 28 * portWORD_SIZE( sp )
 
-	csrr t0, mstatus					/* Required for MPIE bit. */
+	csrr t0, sstatus					/* Required for MPIE bit. */
 	store_x t0, 29 * portWORD_SIZE( sp )
 
 	portasmSAVE_ADDITIONAL_REGISTERS	/* Defined in freertos_risc_v_chip_specific_extensions.h to save any registers unique to the RISC-V implementation. */
@@ -178,8 +171,8 @@ freertos_risc_v_trap_handler:
 	load_x  t0, pxCurrentTCB			/* Load pxCurrentTCB. */
 	store_x  sp, 0( t0 )				/* Write sp to first TCB member. */
 
-	csrr a0, mcause
-	csrr a1, mepc
+	csrr a0, scause  /* MCAUSE  */
+	csrr a1, sepc    /* MEPC */ 
 
 test_if_asynchronous:
 	srli a2, a0, __riscv_xlen - 1		/* MSB of mcause is 1 if handing an asynchronous interrupt - shift to LSB to clear other bits. */
@@ -258,13 +251,13 @@ test_if_environment_call:
 	j processed_source
 
 is_exception:
-	csrr t0, mcause						/* For viewing in the debugger only. */
-	csrr t1, mepc						/* For viewing in the debugger only */
-	csrr t2, mstatus
+	csrr t0, scause	/* mcause */					/* For viewing in the debugger only. */
+	csrr t1, sepc  /* mepc */						/* For viewing in the debugger only */
+	csrr t2, sstatus /* mstatus */
 	j is_exception						/* No other exceptions handled yet. */
 
 as_yet_unhandled:
-	csrr t0, mcause						/* For viewing in the debugger only. */
+	csrr t0, scause	/* mcause */					/* For viewing in the debugger only. */
 	j as_yet_unhandled
 
 processed_source:
@@ -273,7 +266,7 @@ processed_source:
 
 	/* Load mret with the address of the next instruction in the task to run next. */
 	load_x t0, 0( sp )
-	csrw mepc, t0
+	csrw sepc, t0 /* mepc */
 
 	portasmRESTORE_ADDITIONAL_REGISTERS	/* Defined in freertos_risc_v_chip_specific_extensions.h to restore any registers unique to the RISC-V implementation. */
 
@@ -311,7 +304,7 @@ processed_source:
 	load_x  x31, 28 * portWORD_SIZE( sp )	/* t6 */
 	addi sp, sp, portCONTEXT_SIZE
 
-	mret
+	sret /* sret */
 	.endfunc
 /*-----------------------------------------------------------*/
 
@@ -363,7 +356,7 @@ xPortStartFirstTask:
 
 	load_x  x5, 29 * portWORD_SIZE( sp )	/* Initial mstatus into x5 (t0) */
 	addi x5, x5, 0x08						/* Set MIE bit so the first task starts with interrupts enabled - required as returns with ret not eret. */
-	csrrw  x0, mstatus, x5					/* Interrupts enabled from here! */
+	csrrw  x0, sstatus, x5		/* sstatus */			/* Interrupts enabled from here! */
 	load_x  x5, 2 * portWORD_SIZE( sp )		/* Initial x5 (t0) value. */
 
 	addi	sp, sp, portCONTEXT_SIZE
@@ -437,7 +430,7 @@ xPortStartFirstTask:
 .func
 pxPortInitialiseStack:
 
-	csrr t0, mstatus					/* Obtain current mstatus value. */
+	csrr t0, sstatus		/* sstatus */			/* Obtain current mstatus value. */
 	andi t0, t0, ~0x8					/* Ensure interrupts are disabled when the stack is restored within an ISR.  Required when a task is created after the schedulre has been started, otherwise interrupts would be disabled anyway. */
 	addi t1, x0, 0x188					/* Generate the value 0x1880, which are the MPIE and MPP bits to set in mstatus. */
 	slli t1, t1, 4
