@@ -84,16 +84,24 @@ not need to be guarded with a critical section. */
 #define portTICK_PERIOD_MS			( ( TickType_t ) 1000 / configTICK_RATE_HZ )
 #ifdef __riscv64
 	#error This is the RV32 port that has not yet been adapted for 64.
-	#define portBYTE_ALIGNMENT			16
+	#define portBYTE_ALIGNMENT			8
 #else
-	#define portBYTE_ALIGNMENT			16
+	#define portBYTE_ALIGNMENT			8
 #endif
 /*-----------------------------------------------------------*/
 
 
 /* Scheduler utilities. */
 extern void vTaskSwitchContext( void );
-#define portYIELD() __asm volatile( "ecall" );
+// #define portYIELD() __asm volatile( "ecall" );
+
+#define portYIELD()                               		\
+{           											\
+		taskENTER_CRITICAL();                           \
+		vTaskSwitchContext();							\
+		taskEXIT_CRITICAL();							\
+}
+
 #define portEND_SWITCHING_ISR( xSwitchRequired ) if( xSwitchRequired ) vTaskSwitchContext()
 #define portYIELD_FROM_ISR( x ) portEND_SWITCHING_ISR( x )
 /*-----------------------------------------------------------*/

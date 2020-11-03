@@ -38,6 +38,7 @@
 #include "task.h"
 #include "timers.h"
 #include "stack_macros.h"
+#include "regs.h"
 
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
@@ -147,6 +148,7 @@
         listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB, &( pxReadyTasksLists[ uxTopPriority ] ) ); \
         uxTopReadyPriority = uxTopPriority;                                                   \
     } /* taskSELECT_HIGHEST_PRIORITY_TASK */
+                                                                              
 
 /*-----------------------------------------------------------*/
 
@@ -176,6 +178,7 @@
         configASSERT( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ uxTopPriority ] ) ) > 0 ); \
         listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB, &( pxReadyTasksLists[ uxTopPriority ] ) );   \
     } /* taskSELECT_HIGHEST_PRIORITY_TASK() */
+                                                                                                
 
 /*-----------------------------------------------------------*/
 
@@ -1239,6 +1242,10 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                 mtCOVERAGE_TEST_MARKER();
             }
         }
+    }
+
+    void vTaskDeleteSelf(){
+        vTaskDelete(NULL); 
     }
 
 #endif /* INCLUDE_vTaskDelete */

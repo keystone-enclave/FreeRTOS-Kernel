@@ -56,7 +56,7 @@ your application. */
 #define configMAX_CO_ROUTINE_PRIORITIES         1
 
 /* Software timer related definitions. */
-#define configUSE_TIMERS                        1
+#define configUSE_TIMERS                        0
 #define configTIMER_TASK_PRIORITY               3
 #define configTIMER_QUEUE_LENGTH                10
 #define configTIMER_TASK_STACK_DEPTH            configMINIMAL_STACK_SIZE
@@ -79,7 +79,7 @@ your application. */
 /* Optional functions - most linkers will remove unused functions anyway. */
 #define INCLUDE_vTaskPrioritySet                0
 #define INCLUDE_uxTaskPriorityGet               0
-#define INCLUDE_vTaskDelete                     0
+#define INCLUDE_vTaskDelete                     1
 #define INCLUDE_vTaskSuspend                    0
 #define INCLUDE_xResumeFromISR                  0
 #define INCLUDE_vTaskDelayUntil                 0

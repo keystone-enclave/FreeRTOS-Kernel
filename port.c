@@ -33,9 +33,16 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "portmacro.h"
+#include "sbi.h" 
+#include "csr.h" 
+#include "timex.h"
+#include "regs.h"
+#include "syscall.h"
 
 /* Standard includes. */
 #include "string.h"
+
+#define DEFAULT_CLOCK_DELAY 10000
 
 #ifdef configCLINT_BASE_ADDRESS
 	#warning The configCLINT_BASE_ADDRESS constant has been deprecated.  configMTIME_BASE_ADDRESS and configMTIMECMP_BASE_ADDRESS are currently being derived from the (possibly 0) configCLINT_BASE_ADDRESS setting.  Please update to define configMTIME_BASE_ADDRESS and configMTIMECMP_BASE_ADDRESS dirctly in place of configCLINT_BASE_ADDRESS.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-RISC-V.html
@@ -116,6 +123,23 @@ task stack, not the ISR stack). */
 
 /*-----------------------------------------------------------*/
 
+
+
+void vPortSetupTimerInterrupt( void ){
+  sbi_set_timer(get_cycles64() + DEFAULT_CLOCK_DELAY);
+//   csr_set(sstatus, SR_SPIE);
+  csr_set(sie, SIE_STIE | SIE_SSIE);
+}
+
+void handle_timer_interrupt()
+{
+  unsigned long next_cycle = get_cycles64() + DEFAULT_CLOCK_DELAY;
+  sbi_set_timer(next_cycle);
+  csr_clear(sip, 0x20);
+//   csr_set(sstatus, SR_SPIE);
+  return;
+}
+
 #if( configMTIME_BASE_ADDRESS != 0 ) && ( configMTIMECMP_BASE_ADDRESS != 0 )
 
 	void vPortSetupTimerInterrupt( void )
@@ -176,7 +200,7 @@ extern void xPortStartFirstTask( void );
 	/* If there is a CLINT then it is ok to use the default implementation
 	in this file, otherwise vPortSetupTimerInterrupt() must be implemented to
 	configure whichever clock is to be used to generate the tick interrupt. */
-	vPortSetupTimerInterrupt();
+	// vPortSetupTimerInterrupt();
 
 	#if( ( configMTIME_BASE_ADDRESS != 0 ) && ( configMTIMECMP_BASE_ADDRESS != 0 ) )
 	{
@@ -188,7 +212,9 @@ extern void xPortStartFirstTask( void );
 	#else
 	{
 		/* Enable external interrupts. */
-		__asm volatile( "csrs mie, %0" :: "r"(0x800) );
+
+		ENABLE_INTERRUPTS(); 
+		//__asm volatile( "csrs mie, %0" :: "r"(0x800) );
 	}
 	#endif /* ( configMTIME_BASE_ADDRESS != 0 ) && ( configMTIMECMP_BASE_ADDRESS != 0 ) */
 

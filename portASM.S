@@ -101,11 +101,12 @@ registers must be saved by the portasmSAVE_ADDITIONAL_REGISTERS and
 portasmRESTORE_ADDITIONAL_REGISTERS macros - which can be defined in a chip
 specific version of freertos_risc_v_chip_specific_extensions.h.  See the notes
 at the top of this file. */
-#define portCONTEXT_SIZE ( 30 * portWORD_SIZE )
+#define portCONTEXT_SIZE ( (32) * portWORD_SIZE )
 .global xPortStartFirstTask
 .global freertos_risc_v_trap_handler
 .global pxPortInitialiseStack
 .global setup_rtos
+.global switch_tasks
 .extern pxCurrentTCB
 .extern ulPortTrapHandler
 .extern vTaskSwitchContext
@@ -116,6 +117,7 @@ at the top of this file. */
 .extern uxTimerIncrementsForOneTick /* size_t type so 32-bit on 32-bit core and 64-bits on 64-bit core. */
 .extern xISRStackTop
 .extern portasmHANDLE_INTERRUPT
+.extern vPortHandleException
 
 
 .text 
@@ -123,6 +125,8 @@ at the top of this file. */
 .func
 setup_rtos:
   la sp, __stack_top
+  la t0, freertos_risc_v_trap_handler
+  csrrw x0, stvec, t0 
   jal main
 
   .endfunc
@@ -163,8 +167,14 @@ freertos_risc_v_trap_handler:
 	store_x x30, 27 * portWORD_SIZE( sp )
 	store_x x31, 28 * portWORD_SIZE( sp )
 
-	csrr t0, sstatus					/* Required for MPIE bit. */
+	csrr t0, sstatus /* mstatus */					/* Required for MPIE bit. */
 	store_x t0, 29 * portWORD_SIZE( sp )
+
+	csrr t0, sbadaddr
+	store_x t0, 30 * portWORD_SIZE( sp )
+
+	csrr t0, scause
+	store_x t0, 31 * portWORD_SIZE( sp )
 
 	portasmSAVE_ADDITIONAL_REGISTERS	/* Defined in freertos_risc_v_chip_specific_extensions.h to save any registers unique to the RISC-V implementation. */
 
@@ -178,6 +188,9 @@ test_if_asynchronous:
 	srli a2, a0, __riscv_xlen - 1		/* MSB of mcause is 1 if handing an asynchronous interrupt - shift to LSB to clear other bits. */
 	beq a2, x0, handle_synchronous		/* Branch past interrupt handing if not asynchronous. */
 	store_x a1, 0( sp )					/* Asynch so save unmodified exception return address. */
+	srli t0, a0, 1
+	slli t0, a0, 1
+	store_x t0, 31 * portWORD_SIZE( sp )
 
 handle_asynchronous:
 
@@ -242,13 +255,18 @@ handle_asynchronous:
 handle_synchronous:
 	addi a1, a1, 4						/* Synchronous so updated exception return address to the instruction after the instruction that generated the exeption. */
 	store_x a1, 0( sp )					/* Save updated exception return address. */
-
-test_if_environment_call:
-	li t0, 11 							/* 11 == environment call. */
-	bne a0, t0, is_exception			/* Not an M environment call, so some other exception. */
-	load_x sp, xISRStackTop				/* Switch to ISR stack before function call. */
-	jal vTaskSwitchContext
+	mv a0, sp 
+	load_x sp, xISRStackTop	
+	jal vPortHandleException
 	j processed_source
+
+# test_if_environment_call:
+# 	li t0, 11 							/* 11 == environment call. */
+# 	bne a0, t0, is_exception			/* Not an M environment call, so some other exception. */
+# switch_tasks: 
+# 	load_x sp, xISRStackTop				/* Switch to ISR stack before function call. */
+# 	jal vTaskSwitchContext
+# 	j processed_source
 
 is_exception:
 	csrr t0, scause	/* mcause */					/* For viewing in the debugger only. */
@@ -272,7 +290,7 @@ processed_source:
 
 	/* Load mstatus with the interrupt enable bits used by the task. */
 	load_x  t0, 29 * portWORD_SIZE( sp )
-	csrw mstatus, t0						/* Required for MPIE bit. */
+	csrw sstatus, t0						/* Required for MPIE bit. */
 
 	load_x  x1, 1 * portWORD_SIZE( sp )
 	load_x  x5, 2 * portWORD_SIZE( sp )		/* t0 */
@@ -317,7 +335,7 @@ xPortStartFirstTask:
 	trap handler.  Otherwise the interrupt controller will need to be configured
 	outside of this file. */
 	la t0, freertos_risc_v_trap_handler
-	csrw mtvec, t0
+//	csrw stvec, t0
 #endif /* portasmHAS_CLILNT */
 
 	load_x  sp, pxCurrentTCB			/* Load pxCurrentTCB. */
@@ -359,8 +377,12 @@ xPortStartFirstTask:
 	csrrw  x0, sstatus, x5		/* sstatus */			/* Interrupts enabled from here! */
 	load_x  x5, 2 * portWORD_SIZE( sp )		/* Initial x5 (t0) value. */
 
+	
+
 	addi	sp, sp, portCONTEXT_SIZE
-	ret
+
+	csrrw x0, sepc, x1 
+	sret
 	.endfunc
 /*-----------------------------------------------------------*/
 
@@ -394,7 +416,9 @@ xPortStartFirstTask:
  * where the global and thread pointers are currently assumed to be constant so
  * are not saved:
  *
- * mstatus
+ * sbadaddr
+ * scause 
+ * sstatus  
  * x31
  * x30
  * x29
@@ -430,13 +454,16 @@ xPortStartFirstTask:
 .func
 pxPortInitialiseStack:
 
+	addi a0, a0, -(2 * portWORD_SIZE)	/* Create space for scause, sbaddr */
+	addi a0, a0, -portWORD_SIZE
+
 	csrr t0, sstatus		/* sstatus */			/* Obtain current mstatus value. */
 	andi t0, t0, ~0x8					/* Ensure interrupts are disabled when the stack is restored within an ISR.  Required when a task is created after the schedulre has been started, otherwise interrupts would be disabled anyway. */
 	addi t1, x0, 0x188					/* Generate the value 0x1880, which are the MPIE and MPP bits to set in mstatus. */
 	slli t1, t1, 4
 	or t0, t0, t1						/* Set MPIE and MPP bits in mstatus value. */
 
-	addi a0, a0, -portWORD_SIZE
+	addi a0, a0, -(1 * portWORD_SIZE)
 	store_x t0, 0(a0)					/* mstatus onto the stack. */
 	addi a0, a0, -(22 * portWORD_SIZE)	/* Space for registers x11-x31. */
 	store_x a2, 0(a0)					/* Task parameters (pvParameters parameter) goes into register X10/a0 on the stack. */
@@ -450,7 +477,7 @@ chip_specific_stack_frame:				/* First add any chip specific registers to the st
 	addi t0, t0, -1						/* Decrement the count of chip specific registers remaining. */
 	j chip_specific_stack_frame			/* Until no more chip specific registers. */
 1:
-	addi a0, a0, -portWORD_SIZE
+	addi a0, a0, -(1 * portWORD_SIZE)
 	store_x a1, 0(a0)					/* mret value (pxCode parameter) onto the stack. */
 	ret
 	.endfunc

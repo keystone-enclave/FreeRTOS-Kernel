@@ -1,36 +1,32 @@
 #include "sbi.h"
-
-#define SBI_CALL(___which, ___arg0, ___arg1, ___arg2)            \
-  ({                                                             \
-    register uintptr_t a0 __asm__("a0") = (uintptr_t)(___arg0);  \
-    register uintptr_t a1 __asm__("a1") = (uintptr_t)(___arg1);  \
-    register uintptr_t a2 __asm__("a2") = (uintptr_t)(___arg2);  \
-    register uintptr_t a7 __asm__("a7") = (uintptr_t)(___which); \
-    __asm__ volatile("ecall"                                     \
-                     : "+r"(a0)                                  \
-                     : "r"(a1), "r"(a2), "r"(a7)                 \
-                     : "memory");                                \
-    a0;                                                          \
-  })
-
-/* Lazy implementations until SBI is finalized */
-#define SBI_CALL_0(___which) SBI_CALL(___which, 0, 0, 0)
-#define SBI_CALL_1(___which, ___arg0) SBI_CALL(___which, ___arg0, 0, 0)
-#define SBI_CALL_2(___which, ___arg0, ___arg1) \
-  SBI_CALL(___which, ___arg0, ___arg1, 0)
-#define SBI_CALL_3(___which, ___arg0, ___arg1, ___arg2) \
-  SBI_CALL(___which, ___arg0, ___arg1, ___arg2)
+#include "csr.h"
 
 void
 sbi_putchar(char character) {
   SBI_CALL_1(SBI_CONSOLE_PUTCHAR, character);
 }
 
-
-uintptr_t ENABLE_INTERRUPTS(void){
-   return SBI_CALL_0(SBI_ENABLE_INTERRUPT); 
+void
+sbi_set_timer(uint64_t stime_value) {
+#if __riscv_xlen == 32
+  SBI_CALL_2(SBI_SET_TIMER, stime_value, stime_value >> 32);
+#else
+  SBI_CALL_1(SBI_SET_TIMER, stime_value);
+#endif
 }
 
-uintptr_t DISABLE_INTERRUPTS(void){
-   return SBI_CALL_0(DISABLE_INTERRUPTS);
+
+void
+sbi_switch_task(){
+   SBI_CALL_0(SBI_SWITCH_TASK); 
+}
+
+void ENABLE_INTERRUPTS(void){
+
+   csr_set(sstatus, SR_SIE);
+}
+
+void DISABLE_INTERRUPTS(void){
+  
+  csr_clear(sstatus, SR_SIE);
 }
