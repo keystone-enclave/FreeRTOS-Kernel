@@ -101,7 +101,7 @@ registers must be saved by the portasmSAVE_ADDITIONAL_REGISTERS and
 portasmRESTORE_ADDITIONAL_REGISTERS macros - which can be defined in a chip
 specific version of freertos_risc_v_chip_specific_extensions.h.  See the notes
 at the top of this file. */
-#define portCONTEXT_SIZE ( (32) * portWORD_SIZE )
+#define portCONTEXT_SIZE ( (31) * portWORD_SIZE )
 .global xPortStartFirstTask
 .global freertos_risc_v_trap_handler
 .global pxPortInitialiseStack
@@ -126,7 +126,7 @@ at the top of this file. */
 setup_rtos:
   la sp, __stack_top
   la t0, freertos_risc_v_trap_handler
-  csrrw x0, stvec, t0 
+#   csrrw x0, stvec, t0 
   jal main
 
   .endfunc
@@ -167,14 +167,14 @@ freertos_risc_v_trap_handler:
 	store_x x30, 27 * portWORD_SIZE( sp )
 	store_x x31, 28 * portWORD_SIZE( sp )
 
-	csrr t0, sstatus /* mstatus */					/* Required for MPIE bit. */
+	# csrr t0, sstatus /* mstatus */					/* Required for MPIE bit. */
 	store_x t0, 29 * portWORD_SIZE( sp )
 
-	csrr t0, sbadaddr
-	store_x t0, 30 * portWORD_SIZE( sp )
+	# csrr t0, sbadaddr
+	# store_x t0, 30 * portWORD_SIZE( sp )
 
-	csrr t0, scause
-	store_x t0, 31 * portWORD_SIZE( sp )
+	# csrr t0, scause
+	# store_x t0, 31 * portWORD_SIZE( sp )
 
 	portasmSAVE_ADDITIONAL_REGISTERS	/* Defined in freertos_risc_v_chip_specific_extensions.h to save any registers unique to the RISC-V implementation. */
 
@@ -282,15 +282,15 @@ processed_source:
 	load_x  t1, pxCurrentTCB			/* Load pxCurrentTCB. */
 	load_x  sp, 0( t1 )				 	/* Read sp from first TCB member. */
 
-	/* Load mret with the address of the next instruction in the task to run next. */
-	load_x t0, 0( sp )
-	csrw sepc, t0 /* mepc */
+	# /* Load mret with the address of the next instruction in the task to run next. */
+	# load_x t0, 0( sp )
+	# csrw sepc, t0 /* mepc */
 
 	portasmRESTORE_ADDITIONAL_REGISTERS	/* Defined in freertos_risc_v_chip_specific_extensions.h to restore any registers unique to the RISC-V implementation. */
 
 	/* Load mstatus with the interrupt enable bits used by the task. */
-	load_x  t0, 29 * portWORD_SIZE( sp )
-	csrw sstatus, t0						/* Required for MPIE bit. */
+	# load_x  t0, 29 * portWORD_SIZE( sp )
+	# csrw sstatus, t0						/* Required for MPIE bit. */
 
 	load_x  x1, 1 * portWORD_SIZE( sp )
 	load_x  x5, 2 * portWORD_SIZE( sp )		/* t0 */
@@ -374,15 +374,15 @@ xPortStartFirstTask:
 
 	load_x  x5, 29 * portWORD_SIZE( sp )	/* Initial mstatus into x5 (t0) */
 	addi x5, x5, 0x08						/* Set MIE bit so the first task starts with interrupts enabled - required as returns with ret not eret. */
-	csrrw  x0, sstatus, x5		/* sstatus */			/* Interrupts enabled from here! */
+	# csrrw  x0, sstatus, x5		/* sstatus */			/* Interrupts enabled from here! */
 	load_x  x5, 2 * portWORD_SIZE( sp )		/* Initial x5 (t0) value. */
 
 	
 
 	addi	sp, sp, portCONTEXT_SIZE
 
-	csrrw x0, sepc, x1 
-	sret
+	# csrrw x0, sepc, x1 
+	ret
 	.endfunc
 /*-----------------------------------------------------------*/
 
@@ -454,21 +454,18 @@ xPortStartFirstTask:
 .func
 pxPortInitialiseStack:
 
-	addi a0, a0, -(2 * portWORD_SIZE)	/* Create space for scause, sbaddr */
-	addi a0, a0, -portWORD_SIZE
-
-	csrr t0, sstatus		/* sstatus */			/* Obtain current mstatus value. */
-	andi t0, t0, ~0x8					/* Ensure interrupts are disabled when the stack is restored within an ISR.  Required when a task is created after the schedulre has been started, otherwise interrupts would be disabled anyway. */
-	addi t1, x0, 0x188					/* Generate the value 0x1880, which are the MPIE and MPP bits to set in mstatus. */
-	slli t1, t1, 4
-	or t0, t0, t1						/* Set MPIE and MPP bits in mstatus value. */
+	# csrr t0, sstatus		/* sstatus */			/* Obtain current mstatus value. */
+	# andi t0, t0, ~0x8					/* Ensure interrupts are disabled when the stack is restored within an ISR.  Required when a task is created after the schedulre has been started, otherwise interrupts would be disabled anyway. */
+	# addi t1, x0, 0x188					/* Generate the value 0x1880, which are the MPIE and MPP bits to set in mstatus. */
+	# slli t1, t1, 4
+	# or t0, t0, t1						/* Set MPIE and MPP bits in mstatus value. */
 
 	addi a0, a0, -(1 * portWORD_SIZE)
 	store_x t0, 0(a0)					/* mstatus onto the stack. */
 	addi a0, a0, -(22 * portWORD_SIZE)	/* Space for registers x11-x31. */
 	store_x a2, 0(a0)					/* Task parameters (pvParameters parameter) goes into register X10/a0 on the stack. */
 	addi a0, a0, -(6 * portWORD_SIZE)	/* Space for registers x5-x9. */
-	store_x x0, 0(a0)					/* Return address onto the stack, could be portTASK_RETURN_ADDRESS */
+	store_x a2, 0(a0)					/* Return address onto the stack, could be portTASK_RETURN_ADDRESS */
 	addi t0, x0, portasmADDITIONAL_CONTEXT_SIZE /* The number of chip specific additional registers. */
 chip_specific_stack_frame:				/* First add any chip specific registers to the stack frame being created. */
 	beq t0, x0, 1f						/* No more chip specific registers to save. */
@@ -480,5 +477,100 @@ chip_specific_stack_frame:				/* First add any chip specific registers to the st
 	addi a0, a0, -(1 * portWORD_SIZE)
 	store_x a1, 0(a0)					/* mret value (pxCode parameter) onto the stack. */
 	ret
-	.endfunc
+.endfunc
 /*-----------------------------------------------------------*/
+
+
+/* Macro to setup registers based on the current TCB */
+.macro SETUP_REGS
+	addi sp, sp, -portCONTEXT_SIZE
+	store_x t0, 0 (sp) /* Stores PC */
+	store_x x1, 1 * portWORD_SIZE( sp ) /* ra */
+	store_x sp,  2 * portWORD_SIZE ( sp ) 
+	store_x x5, 3 * portWORD_SIZE( sp )
+	store_x x6, 4 * portWORD_SIZE( sp )
+	store_x x7, 5 * portWORD_SIZE( sp )
+	store_x x8, 6 * portWORD_SIZE( sp )
+	store_x x9, 7 * portWORD_SIZE( sp )
+	store_x x10, 8 * portWORD_SIZE( sp )
+	store_x x11, 9 * portWORD_SIZE( sp )
+	store_x x12, 10 * portWORD_SIZE( sp )
+	store_x x13, 11 * portWORD_SIZE( sp )
+	store_x x14, 12 * portWORD_SIZE( sp )
+	store_x x15, 13 * portWORD_SIZE( sp )
+	store_x x16, 14 * portWORD_SIZE( sp )
+	store_x x17, 15 * portWORD_SIZE( sp )
+	store_x x18, 16 * portWORD_SIZE( sp )
+	store_x x19, 17 * portWORD_SIZE( sp )
+	store_x x20, 18 * portWORD_SIZE( sp )
+	store_x x21, 19 * portWORD_SIZE( sp )
+	store_x x22, 20 * portWORD_SIZE( sp )
+	store_x x23, 21 * portWORD_SIZE( sp )
+	store_x x24, 22 * portWORD_SIZE( sp )
+	store_x x25, 23 * portWORD_SIZE( sp )
+	store_x x26, 24 * portWORD_SIZE( sp )
+	store_x x27, 25 * portWORD_SIZE( sp )
+	store_x x28, 2 * portWORD_SIZE( sp )
+	store_x x29, 27 * portWORD_SIZE( sp )
+	store_x x30, 28 * portWORD_SIZE( sp )
+	store_x x31, 29 * portWORD_SIZE( sp )
+.endm
+
+.macro RESTORE_REGS
+	load_x  x1, 1 * portWORD_SIZE( sp ) /* Note for starting the scheduler the exception return address is used as the function return address. */
+	 
+	load_x  x5, 3 * portWORD_SIZE( sp ) 	/* t1 */ 
+	load_x  x6, 4 * portWORD_SIZE( sp )		/* t1 */
+	load_x  x7, 5 * portWORD_SIZE( sp )		/* t2 */
+	load_x  x8, 6 * portWORD_SIZE( sp )		/* s0/fp */
+	load_x  x9, 7 * portWORD_SIZE( sp )		/* s1 */
+	load_x  x10, 8 * portWORD_SIZE( sp )	/* a0 */
+	load_x  x11, 9 * portWORD_SIZE( sp )	/* a1 */
+	load_x  x12, 10 * portWORD_SIZE( sp )	/* a2 */
+	load_x  x13, 11 * portWORD_SIZE( sp )	/* a3 */
+	load_x  x14, 12 * portWORD_SIZE( sp )	/* a4 */
+	load_x  x15, 13 * portWORD_SIZE( sp )	/* a5 */
+	load_x  x16, 14 * portWORD_SIZE( sp )	/* a6 */
+	load_x  x17, 15 * portWORD_SIZE( sp )	/* a7 */
+	load_x  x18, 16 * portWORD_SIZE( sp )	/* s2 */
+	load_x  x19, 17 * portWORD_SIZE( sp )	/* s3 */
+	load_x  x20, 18 * portWORD_SIZE( sp )	/* s4 */
+	load_x  x21, 19 * portWORD_SIZE( sp )	/* s5 */
+	load_x  x22, 20 * portWORD_SIZE( sp )	/* s6 */
+	load_x  x23, 21 * portWORD_SIZE( sp )	/* s7 */
+	load_x  x24, 22 * portWORD_SIZE( sp )	/* s8 */
+	load_x  x25, 23 * portWORD_SIZE( sp )	/* s9 */
+	load_x  x26, 24 * portWORD_SIZE( sp )	/* s10 */
+	load_x  x27, 25 * portWORD_SIZE( sp )	/* s11 */
+	load_x  x28, 26 * portWORD_SIZE( sp )	/* t3 */
+	load_x  x29, 27 * portWORD_SIZE( sp )	/* t4 */
+	load_x  x30, 28 * portWORD_SIZE( sp )	/* t5 */
+	load_x  x31, 29 * portWORD_SIZE( sp )	/* t6 */
+	addi sp, sp, portCONTEXT_SIZE
+.endm
+
+
+.align 8
+.func
+switch_tasks:
+	#a0 - Yield context?  
+	load_x  t0, pxCurrentTCB			/* Load pxCurrentTCB. */
+	load_x  t0, 0( t0 )
+	load_x  t0, 0( t0 )
+
+	SETUP_REGS
+	
+	mv a1, a0 # S
+	mv a0, sp 
+	jal ra, syscall_switch_task
+
+	# Stores task return value in a0 location
+	# Restored later 
+	store_x  a0, 8 * portWORD_SIZE( sp ) 
+
+	RESTORE_REGS
+
+	jr ra 
+
+
+.endfunc

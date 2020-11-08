@@ -3,20 +3,48 @@
 
 #include "sbi.h"
 #include "regs.h"
+#include <stddef.h>
+#include <stdint.h>
 
 #define SYSCALL_SET_TIMER                   1000
 #define SYSCALL_CONSOLE_PUTCHAR             1001
 #define SYSCALL_CONSOLE_GETCHAR             1002
-#define SYSCALL_YIELD                       1003
-#define SYSCALL_TASK_DELETE                 1004
 
-void handle_syscalls(struct encl_ctx *ctx);
+#define SBI_ENABLE_INTERRUPT     200
+#define SBI_SWITCH_TASK          201
+#define SBI_REGISTER_TASK        202
+
+
+#define RET_EXIT 0 
+#define RET_YIELD 1
+
+
+struct task_ctx {
+	struct regs regs;
+	uintptr_t valid; 
+};
+
+struct register_sbi_arg {
+    uintptr_t pc;
+	uintptr_t sp; 
+}; 
+
+struct switch_sbi_arg {
+    uintptr_t mepc;
+	uintptr_t task_id; 
+}; 
+
+void handle_syscalls(struct task_ctx *ctx);
 
 void syscall_putchar(char character);
 
 void syscall_yield();
 
-void syscall_task_delete();
+uintptr_t syscall_switch_task(uintptr_t task_id, uintptr_t ret_type);
+
+uintptr_t syscall_register_task (struct register_sbi_arg *args);
+
+void syscall_task_return();
 
 
 #endif /* syscall.h */

@@ -15,10 +15,19 @@ sbi_set_timer(uint64_t stime_value) {
 #endif
 }
 
-
 void
 sbi_switch_task(){
-   SBI_CALL_0(SBI_SWITCH_TASK); 
+  //  SB/I_CALL_0(SBI_SWITCH_TASK); 
+}
+
+void
+sbi_enable_interrupts(){
+  //  SBI_CALL_1(SBI_ENABLE_INTERRUPT, 1); 
+}
+
+void
+sbi_disable_interrupts(){
+  //  SBI_CALL_1(SBI_ENABLE_INTERRUPT, 0); 
 }
 
 void ENABLE_INTERRUPTS(void){

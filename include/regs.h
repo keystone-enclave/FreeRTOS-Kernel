@@ -8,8 +8,9 @@
 #include <stdint.h>
 
 struct regs {
-	uintptr_t sepc; // use this slot as sepc
+	uintptr_t pc; // use this slot as pc
 	uintptr_t ra;
+	uintptr_t sp; 
 	uintptr_t t0;
 	uintptr_t t1;
 	uintptr_t t2;
@@ -39,11 +40,4 @@ struct regs {
 	uintptr_t t6;
 };
 
-struct encl_ctx {
-	struct regs regs;
-  /* Supervisor CSRs */
-	uintptr_t sstatus;//32
-	uintptr_t sbadaddr;//33
-	uintptr_t scause;//34
-};
 #endif /* _REGS_H_ */

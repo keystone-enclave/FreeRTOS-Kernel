@@ -36,10 +36,10 @@ int main( void )
 
 static void taskTestFn(void *pvParameters){
    printf("Task 1\n"); 
-   syscall_task_delete();
+   syscall_task_return();
 }
 
 static void taskTestFn2(void *pvParameters){
    printf("Task 2\n");
-   syscall_task_delete();  
+   syscall_task_return();
 }

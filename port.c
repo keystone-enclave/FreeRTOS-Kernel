@@ -127,8 +127,6 @@ task stack, not the ISR stack). */
 
 void vPortSetupTimerInterrupt( void ){
   sbi_set_timer(get_cycles64() + DEFAULT_CLOCK_DELAY);
-//   csr_set(sstatus, SR_SPIE);
-  csr_set(sie, SIE_STIE | SIE_SSIE);
 }
 
 void handle_timer_interrupt()
@@ -141,7 +139,6 @@ void handle_timer_interrupt()
 }
 
 #if( configMTIME_BASE_ADDRESS != 0 ) && ( configMTIMECMP_BASE_ADDRESS != 0 )
-
 	void vPortSetupTimerInterrupt( void )
 	{
 	uint32_t ulCurrentTimeHigh, ulCurrentTimeLow;
@@ -213,12 +210,14 @@ extern void xPortStartFirstTask( void );
 	{
 		/* Enable external interrupts. */
 
-		ENABLE_INTERRUPTS(); 
+		sbi_enable_interrupts(); 
 		//__asm volatile( "csrs mie, %0" :: "r"(0x800) );
 	}
 	#endif /* ( configMTIME_BASE_ADDRESS != 0 ) && ( configMTIMECMP_BASE_ADDRESS != 0 ) */
 
-	xPortStartFirstTask();
+	startTasks(); 
+
+	// xPortStartFirstTask();
 
 	/* Should not get here as after calling xPortStartFirstTask() only tasks
 	should be executing. */

@@ -39,6 +39,7 @@
 #include "timers.h"
 #include "stack_macros.h"
 #include "regs.h"
+#include "syscall.h"
 
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
@@ -266,6 +267,7 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
     UBaseType_t uxPriority;                     /*< The priority of the task.  0 is the lowest priority. */
     StackType_t * pxStack;                      /*< Points to the start of the stack. */
     char pcTaskName[ configMAX_TASK_NAME_LEN ]; /*< Descriptive name given to the task when created.  Facilitates debugging only. */ /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+    size_t task_id;             /* Unique Task ID */
 
     #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
         StackType_t * pxEndOfStack; /*< Points to the highest valid address for the stack. */
@@ -804,6 +806,15 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
             prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
             prvAddNewTaskToReadyList( pxNewTCB );
+
+
+            struct register_sbi_arg register_args; 
+            register_args.pc = pxNewTCB->pxTopOfStack[0]; 
+            register_args.sp = (uintptr_t) pxNewTCB->pxTopOfStack;
+
+            //Registers new task to the SM 
+            pxNewTCB->task_id = syscall_register_task(&register_args); 
+
             xReturn = pdPASS;
         }
         else
@@ -5395,3 +5406,28 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
     #endif
 
 #endif /* if ( configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1 ) */
+
+/* -------------------- Keystone Changes  ------------------------ */
+
+void startTasks()
+{
+    extern uintptr_t switch_tasks(uintptr_t yield_ctx);
+    while (1)
+    {
+        // struct switch_sbi_arg switch_args;
+        // switch_args.mepc = pxCurrentTCB->pxTopOfStack[0]; 
+        // switch_args.task_id = pxCurrentTCB->task_id; 
+
+        int ret_code = syscall_switch_task(pxCurrentTCB->task_id, 0);
+        switch (ret_code)
+        {
+        case RET_EXIT:
+            /* Task returned, so delete it and scheduler another! */
+            vTaskDelete((TaskHandle_t) pxCurrentTCB);
+            break;
+        case RET_YIELD:
+            vTaskSwitchContext();
+            break;
+        }
+    }
+}

@@ -97,9 +97,7 @@ extern void vTaskSwitchContext( void );
 
 #define portYIELD()                               		\
 {           											\
-		taskENTER_CRITICAL();                           \
 		vTaskSwitchContext();							\
-		taskEXIT_CRITICAL();							\
 }
 
 #define portEND_SWITCHING_ISR( xSwitchRequired ) if( xSwitchRequired ) vTaskSwitchContext()
@@ -114,9 +112,9 @@ extern void vTaskExitCritical( void );
 
 #define portSET_INTERRUPT_MASK_FROM_ISR() 0
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedStatusValue ) ( void ) uxSavedStatusValue
-#define portDISABLE_INTERRUPTS()	DISABLE_INTERRUPTS()
+#define portDISABLE_INTERRUPTS()	sbi_disable_interrupts()
 // __asm volatile( "csrc mstatus, 8" )
-#define portENABLE_INTERRUPTS()		ENABLE_INTERRUPTS() 
+#define portENABLE_INTERRUPTS()		sbi_enable_interrupts()
 //__asm volatile( "csrs mstatus, 8" )
 #define portENTER_CRITICAL()	vTaskEnterCritical()
 #define portEXIT_CRITICAL()		vTaskExitCritical()
