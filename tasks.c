@@ -5428,6 +5428,9 @@ void startTasks()
         case RET_YIELD:
             vTaskSwitchContext();
             break;
+        case RET_TIMER:
+            vTaskSwitchContext();
+            break;
         }
     }
 }

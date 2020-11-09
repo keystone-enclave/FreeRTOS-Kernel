@@ -40,6 +40,8 @@ static void taskTestFn(void *pvParameters){
 }
 
 static void taskTestFn2(void *pvParameters){
+   printf("Task 2 before yield\n");
+   syscall_task_yield(); 
    printf("Task 2\n");
    syscall_task_return();
 }

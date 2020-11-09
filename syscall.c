@@ -36,7 +36,7 @@ uintptr_t syscall_register_task (struct register_sbi_arg *args) {
     Yields the task back to the scheduler.
     MUST be called in a task context.
 */
-void syscall_yield(){
+void syscall_task_yield(){
     SBI_CALL_2(SBI_SWITCH_TASK, 0, RET_YIELD);
 }
 

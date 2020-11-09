@@ -17,7 +17,7 @@
 
 #define RET_EXIT 0 
 #define RET_YIELD 1
-
+#define RET_TIMER 2
 
 struct task_ctx {
 	struct regs regs;
@@ -38,7 +38,7 @@ void handle_syscalls(struct task_ctx *ctx);
 
 void syscall_putchar(char character);
 
-void syscall_yield();
+void syscall_task_yield();
 
 uintptr_t syscall_switch_task(uintptr_t task_id, uintptr_t ret_type);
 
