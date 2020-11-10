@@ -21,6 +21,8 @@ TaskHandle_t taskTest2;
 
 int main( void )
 {
+
+
         printf("Free RTOS booted!\n"); 
 
         xTaskCreate(taskTestFn, "taskTest1", configMINIMAL_STACK_SIZE, NULL, 20, &taskTest); 
