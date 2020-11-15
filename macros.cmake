@@ -29,7 +29,6 @@ macro(use_riscv_toolchain bits)
   set(OBJCOPY         ${CROSSCOMPILE}objcopy)
   set(OBJDUMP         ${CROSSCOMPILE}objdump)
   # set(CFLAGS          "-Wall -Werror")
-
   global_set(CMAKE_C_COMPILER        ${CC}${EXT})
   global_set(CMAKE_ASM_COMPILER        ${CC}${EXT})
   global_set(CMAKE_CXX_COMPILER      ${CXX}${EXT})

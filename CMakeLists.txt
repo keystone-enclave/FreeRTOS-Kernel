@@ -104,10 +104,14 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${rtos_src}/firmware/rt
 
 set_source_files_properties(${rtos_src}/firmware/portASM.S PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
 
+add_subdirectory(tests)
+
 add_executable(freeRTOS ${rtos_src}/firmware/portASM.S ${RTOS_SOURCE_FILES} ${ELF_SOURCE_FILES} ${LIB_SOURCE_FILES} ${MEMMANG_SOURCE_FILES} ${MAIN_SOURCE_FILES})
 target_compile_definitions(freeRTOS PUBLIC -DportasmHANDLE_INTERRUPT=interrupt_handler)
 
 set_property(TARGET freeRTOS PROPERTY LINK_FLAGS ${LIBGCC})
+
+target_link_libraries(freeRTOS fib att)
 
 install(TARGETS freeRTOS DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
