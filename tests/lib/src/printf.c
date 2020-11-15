@@ -49,8 +49,8 @@
 #define PRINTF_SUPPORT_FLOAT
 
 // define this to support long long types (%llu or %p)
-#define PRINTF_SUPPORT_LONG_LONG
-
+// #define PRINTF_SUPPORT_LONG_LONG
+ 
 // define this to support the ptrdiff_t type (%t)
 // ptrdiff_t is normally defined in <stddef.h> as long or long long type
 #define PRINTF_SUPPORT_PTRDIFF_T

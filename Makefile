@@ -4,7 +4,7 @@ OBJCPY = riscv32-unknown-elf-objcopy
 OBJDUMP = riscv32-unknown-elf-objdump
 
 CFLAGS = -Wall -O0 -Werror -fPIC -fno-builtin -std=c11 -g -march=rv32imafd -mabi=ilp32d
-LDFLAGS = -static -nostdlib $(shell $(CC) --print-file-name=libgcc.a)
+LDFLAGS = -static -nostdlib
 
 OPTION_FLAGS = -DportasmHANDLE_INTERRUPT=interrupt_handler
 

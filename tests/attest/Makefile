@@ -1,7 +1,7 @@
 CC = riscv32-unknown-linux-gnu-gcc
 OBJDUMP = riscv32-unknown-linux-gnu-objdump
 CFLAGS = -Wall -O0 -Werror -fPIC -fno-builtin -g -std=c11 -fcommon -fno-zero-initialized-in-bss
-LDFLAGS = -static -nostdlib $(shell $(CC) --print-file-name=libgcc.a)
+LDFLAGS = -static -nostdlib 
 
 LIBDIR = ../lib
 
