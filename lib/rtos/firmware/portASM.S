@@ -334,7 +334,7 @@ xPortStartFirstTask:
 	/* If there is a clint then interrupts can branch directly to the FreeRTOS
 	trap handler.  Otherwise the interrupt controller will need to be configured
 	outside of this file. */
-	la t0, freertos_risc_v_trap_handler
+	# la t0, freertos_risc_v_trap_handler
 //	csrw stvec, t0
 #endif /* portasmHAS_CLILNT */
 

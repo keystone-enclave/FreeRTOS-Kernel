@@ -5,6 +5,7 @@ ENTRY( setup_rtos )
 SECTIONS
 {
   . = 0x80400000;
+  _rtos_base = .; 
   PROVIDE(rtos_base = .);
   .text : {
     *(.text.setup_rtos)
@@ -55,6 +56,22 @@ SECTIONS
     _sp = .;
     __freertos_irq_stack_top = .;
   }
+  _rtos_end = .; 
+  PROVIDE(rtos_end = .);
+  . = ALIGN(0x1000);
 
-  _end = .;
+  .fibonacci : {
+    _task_1_start = .; 
+    *(.fibonacci*)  
+    . = ALIGN(0x1000);
+    _task_1_end = .; 
+  }  
+
+    .attest : {
+    _task_2_start = .; 
+    *(.attest*)  
+    . = ALIGN(0x1000);
+    _task_2_end = .; 
+  }  
+
 }

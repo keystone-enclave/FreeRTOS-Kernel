@@ -17,6 +17,12 @@ syscall_putchar(char character) {
   SBI_CALL_1(SYSCALL_CONSOLE_PUTCHAR, character);
 }
 
+void
+sbi_getchar() {
+  SBI_CALL_0(SBI_CONSOLE_GETCHAR);
+}
+
+
 uintptr_t syscall_switch_task(uintptr_t task_id, uintptr_t ret_type){
 
     //Switches to new task 

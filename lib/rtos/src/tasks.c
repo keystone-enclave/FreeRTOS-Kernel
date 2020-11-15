@@ -267,7 +267,10 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
     UBaseType_t uxPriority;                     /*< The priority of the task.  0 is the lowest priority. */
     StackType_t * pxStack;                      /*< Points to the start of the stack. */
     char pcTaskName[ configMAX_TASK_NAME_LEN ]; /*< Descriptive name given to the task when created.  Facilitates debugging only. */ /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-    size_t task_id;             /* Unique Task ID */
+    size_t task_id;                             /* Unique Task ID */
+    uintptr_t base;                             /* Base address of enclave */
+    uintptr_t size;                             /* Size of the enclave */
+    int is_enclave; 
 
     #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
         StackType_t * pxEndOfStack; /*< Points to the highest valid address for the stack. */
@@ -805,16 +808,18 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
             prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
-            prvAddNewTaskToReadyList( pxNewTCB );
+            prvAddNewTaskToReadyList( pxNewTCB ); 
 
-
-            struct register_sbi_arg register_args; 
+            struct register_sbi_arg register_args;
             register_args.pc = pxNewTCB->pxTopOfStack[0]; 
-            register_args.sp = (uintptr_t) pxNewTCB->pxTopOfStack;
-
-            //Registers new task to the SM 
+            register_args.sp = (uintptr_t) pxNewTCB->pxTopOfStack; 
+            register_args.stack_size = 0; 
+            register_args.base = 0; 
+            register_args.size = 0; 
+            register_args.enclave = 0;
             pxNewTCB->task_id = syscall_register_task(&register_args); 
 
+            pxNewTCB->is_enclave = 0; 
             xReturn = pdPASS;
         }
         else
@@ -1018,6 +1023,8 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
      * but had been interrupted by the scheduler.  The return address is set
      * to the start of the task function. Once the stack has been initialised
      * the top of stack variable is updated. */
+
+    if(pxNewTCB->pxStack != 0){
     #if ( portUSING_MPU_WRAPPERS == 1 )
         {
             /* If the port has capability to detect stack overflow,
@@ -1065,6 +1072,10 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
             #endif /* portHAS_STACK_OVERFLOW_CHECKING */
         }
     #endif /* portUSING_MPU_WRAPPERS */
+    }
+
+    
+
 
     if( pxCreatedTask != NULL )
     {
@@ -5409,15 +5420,64 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
 
 /* -------------------- Keystone Changes  ------------------------ */
 
+
+BaseType_t _enclave_init(struct register_sbi_arg *register_args,
+                            const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                            UBaseType_t uxPriority,
+                            TaskHandle_t * const pxCreatedTask ){
+
+    TCB_t * pxNewTCB;
+    BaseType_t xReturn;
+
+     /* Allocate space for the TCB.  Where the memory comes from depends on
+                 * the implementation of the port malloc function and whether or not static
+                 * allocation is being used. */
+    pxNewTCB = ( TCB_t * ) pvPortMalloc( sizeof( TCB_t ) );
+
+    if (pxNewTCB != NULL)
+    {
+#if (tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0) /*lint !e9029 !e731 Macro has been consolidated for readability reasons. */
+        {
+            /* Tasks can be created statically or dynamically, so note this
+                     * task was created dynamically in case it is later deleted. */
+            pxNewTCB->ucStaticallyAllocated = tskDYNAMICALLY_ALLOCATED_STACK_AND_TCB;
+        }
+#endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
+
+        prvInitialiseNewTask(0, pcName, 0, NULL, uxPriority, pxCreatedTask, pxNewTCB, NULL);
+        prvAddNewTaskToReadyList(pxNewTCB);
+
+        pxNewTCB->task_id = registerTask(register_args);
+        pxNewTCB->is_enclave = 1; 
+
+        xReturn = pdPASS;
+    }
+    else
+    {
+        xReturn = errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY;
+    }
+
+    return xReturn;
+}
+
+uintptr_t _create_task_enclave(struct register_sbi_arg *register_args,
+                                const char *const pcName,
+                                UBaseType_t uxPriority,
+                                TaskHandle_t *pxCreatedTask)
+{
+    return _enclave_init(register_args, pcName, uxPriority, pxCreatedTask);
+}
+
+int registerTask(struct register_sbi_arg *register_args)
+{
+    return syscall_register_task(register_args);
+}
+
 void startTasks()
 {
     extern uintptr_t switch_tasks(uintptr_t yield_ctx);
     while (1)
     {
-        // struct switch_sbi_arg switch_args;
-        // switch_args.mepc = pxCurrentTCB->pxTopOfStack[0]; 
-        // switch_args.task_id = pxCurrentTCB->task_id; 
-
         int ret_code = syscall_switch_task(pxCurrentTCB->task_id, 0);
         switch (ret_code)
         {

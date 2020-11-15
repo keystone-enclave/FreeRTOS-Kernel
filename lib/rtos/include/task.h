@@ -33,6 +33,7 @@
 #endif
 
 #include "list.h"
+#include "syscall.h"
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus
@@ -3047,7 +3048,11 @@ void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut ) PRIVILEGED_FUNC
 
 /* --- KEYSTONE CHANGES ---*/
 void startTasks();
-
+int registerTask(struct register_sbi_arg *register_args);
+uintptr_t _create_task_enclave(struct register_sbi_arg *register_args,
+                            const char * const pcName, 
+                            UBaseType_t uxPriority,
+                            TaskHandle_t * pxCreatedTask);
 /* *INDENT-OFF* */
 #ifdef __cplusplus
     }

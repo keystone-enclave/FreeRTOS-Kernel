@@ -27,16 +27,17 @@ struct task_ctx {
 struct register_sbi_arg {
     uintptr_t pc;
 	uintptr_t sp; 
-}; 
-
-struct switch_sbi_arg {
-    uintptr_t mepc;
-	uintptr_t task_id; 
+	uintptr_t stack_size; 
+	uintptr_t base;
+	uintptr_t size;  
+	uintptr_t enclave; 
 }; 
 
 void handle_syscalls(struct task_ctx *ctx);
 
 void syscall_putchar(char character);
+
+void sbi_getchar();
 
 void syscall_task_yield();
 
