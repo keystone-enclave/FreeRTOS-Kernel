@@ -37,6 +37,8 @@ void handle_syscalls(struct task_ctx *ctx);
 
 void syscall_putchar(char character);
 
+void sbi_getchar();
+
 void syscall_task_yield();
 
 uintptr_t syscall_switch_task(uintptr_t task_id, uintptr_t ret_type);

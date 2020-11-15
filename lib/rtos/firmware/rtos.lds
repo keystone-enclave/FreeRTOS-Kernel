@@ -66,4 +66,12 @@ SECTIONS
     . = ALIGN(0x1000);
     _task_1_end = .; 
   }  
+
+    .attest : {
+    _task_2_start = .; 
+    *(.attest*)  
+    . = ALIGN(0x1000);
+    _task_2_end = .; 
+  }  
+
 }

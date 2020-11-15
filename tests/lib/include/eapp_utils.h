@@ -1,9 +1,15 @@
+#ifndef __EAPP_H__
+#define __EAPP_H__
+
+#include <stdint.h>
 
 #define SBI_CONSOLE_PUTCHAR 1
+
 #define RET_EXIT 0 
 #define RET_YIELD 1
 
 #define SBI_SWITCH_TASK    201
+#define SBI_ATTEST_TASK    203
 
 #define SBI_CALL(___which, ___arg0, ___arg1, ___arg2)            \
   ({                                                             \
@@ -28,27 +34,11 @@
 
 #define EAPP_ENTRY __attribute__((__section__(".text._start")))
 
-typedef unsigned long uintptr_t;
-
 void
-syscall_putchar(char character) {
-  SBI_CALL_1(SBI_CONSOLE_PUTCHAR, character);
-}
+sbi_putchar(char character);
 
-/* 
-    Yields the task back to the scheduler.
-    MUST be called in a task context.
-*/
-void syscall_task_yield(){
-    SBI_CALL_2(SBI_SWITCH_TASK, 0, RET_YIELD);
-}
+void syscall_task_yield();
 
+void syscall_task_return();
 
-/* 
-    Returns the task back to the scheduler.
-    Signals the scheduler to self delete the task. 
-    Will NOT return
-*/
-void syscall_task_return(){
-    SBI_CALL_2(SBI_SWITCH_TASK, 0, RET_EXIT);
-}
+#endif

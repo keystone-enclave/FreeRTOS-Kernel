@@ -2,7 +2,8 @@
 // Copyright (c) 2018, The Regents of the University of California (Regents).
 // All Rights Reserved. See LICENSE for license details.
 //------------------------------------------------------------------------------
-#include "user_utils.h"
+#include "eapp_utils.h"
+#include "printf.h"
 
 char arr[1024] = {0};
 
@@ -16,8 +17,7 @@ unsigned long fibonacci_rec(unsigned long in){
 void EAPP_ENTRY eapp_entry(){
   int arg = 35;
   int ret = fibonacci_rec(arg);
-  ret = ret - arr[0]; 
-  arr[0] = 5; 
+  printf("Enclave 1: %d\n", ret); 
   syscall_task_return();
   
 }

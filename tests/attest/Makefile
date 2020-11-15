@@ -5,9 +5,9 @@ LDFLAGS = -static -nostdlib $(shell $(CC) --print-file-name=libgcc.a)
 
 LIBDIR = ../lib
 
-TARGET = fibonacci.bin
+TARGET = attest.bin
 
-SRCS = fibonacci.c $(LIBDIR)/src/eapp.S $(LIBDIR)/src/printf.c $(LIBDIR)/src/string.c $(LIBDIR)/src/eapp_utils.c 
+SRCS = attest.c $(LIBDIR)/src/eapp.S $(LIBDIR)/src/printf.c $(LIBDIR)/src/string.c $(LIBDIR)/src/eapp_utils.c 
 
 CFLAGS += -I.. -I$(LIBDIR)/include
 
