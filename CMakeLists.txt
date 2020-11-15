@@ -1,8 +1,10 @@
-include(macros.cmake)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
+  include(macros.cmake)
+  use_riscv_toolchain(32)
+endif()
 
 cmake_minimum_required(VERSION 3.5)
-project(FreeRTOS.elf C ASM)
-use_riscv_toolchain(32)
+project(freeRTOS C ASM)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 ###############################################################################
@@ -91,7 +93,6 @@ file(GLOB MAIN_SOURCE_FILES "${main_src}/src/*.c")
 file(GLOB ELF_SOURCE_FILES "${utils_dir_src}/elf/src/*.c")
 file(GLOB LIB_SOURCE_FILES "${utils_dir_src}/lib/src/*.c")
 file(GLOB MEMMANG_SOURCE_FILES "${utils_dir_src}/MemMang/src/heap_4.c")
-
 include_directories(${utils_dir_src}/elf/include)
 include_directories(${utils_dir_src}/lib/include)
 
