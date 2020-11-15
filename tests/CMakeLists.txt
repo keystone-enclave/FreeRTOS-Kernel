@@ -16,6 +16,8 @@ file(GLOB LIB_SOURCE_FILES "lib/src/*")
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
 
-add_library(fib fibonacci/fibonacci.c ${LIB_SOURCE_FILES})
+add_executable(fib fibonacci/fibonacci.c ${LIB_SOURCE_FILES})
+install(TARGETS fib DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
-add_library(att attest/attest.c ${LIB_SOURCE_FILES})
+add_executable(att attest/attest.c ${LIB_SOURCE_FILES})
+install(TARGETS att DESTINATION ${EXECUTABLE_OUTPUT_PATH})

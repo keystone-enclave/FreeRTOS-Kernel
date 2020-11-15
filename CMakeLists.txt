@@ -106,12 +106,10 @@ set_source_files_properties(${rtos_src}/firmware/portASM.S PROPERTIES COMPILE_FL
 
 add_subdirectory(tests)
 
-add_executable(freeRTOS ${rtos_src}/firmware/portASM.S ${RTOS_SOURCE_FILES} ${ELF_SOURCE_FILES} ${LIB_SOURCE_FILES} ${MEMMANG_SOURCE_FILES} ${MAIN_SOURCE_FILES})
-target_compile_definitions(freeRTOS PUBLIC -DportasmHANDLE_INTERRUPT=interrupt_handler)
+add_executable(freeRTOS ${rtos_src}/firmware/portASM.S ${RTOS_SOURCE_FILES} ${ELF_SOURCE_FILES} ${LIB_SOURCE_FILES} ${MEMMANG_SOURCE_FILES} ${MAIN_SOURCE_FILES} tests)
+target_compile_definitions(freeRTOS PUBLIC -DportasmHANDLE_INTERRUPT=interrupt_handler tests)
 
 set_property(TARGET freeRTOS PROPERTY LINK_FLAGS ${LIBGCC})
-
-target_link_libraries(freeRTOS fib att)
 
 install(TARGETS freeRTOS DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
