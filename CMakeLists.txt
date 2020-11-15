@@ -1,8 +1,8 @@
+include(macros.cmake)
+
 cmake_minimum_required(VERSION 3.5)
-set(CMAKE_C_COMPILER "riscv32-unknown-linux-gnu-gcc")
-set(CMAKE_C_LINK_EXECUTABLE "riscv32-unknown-linux-gnu-ld")
-set(CMAKE_OBJCOPY "riscv32-unknown-elf-objcopy")
 project(FreeRTOS.elf C ASM)
+use_riscv_toolchain(32)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 ###############################################################################
@@ -58,6 +58,14 @@ set(SRCS "${SRCS}")
 # message(STATUS ${ASM_SRCS})
 # message(STATUS ${SRCS})
 
+set(CFLAGS      "-Wall -O0 -Werror -fPIC -fno-builtin -std=c11 -g -march=rv32imafd -mabi=ilp32d")
+execute_process(COMMAND ${CMAKE_C_COMPILER} --print-file-name=libgcc.a OUTPUT_VARIABLE LIBGCC)
+set(LDFLAGS     "-static -nostdlib ${LIBGCC}")
+set(CMAKE_C_FLAGS          "${CMAKE_C_FLAGS} ${CFLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LDFLAGS}")
+
+include_directories(${rtos_src}/include)
+include_directories(${main_src}/include)
 
 SUBDIRLIST(SUBDIRS ${utils_dir_src})
 message("Checking for packages...")
@@ -75,15 +83,23 @@ FOREACH(package ${SUBDIRS})
   endif()
 ENDFOREACH()
 
-list(INSERT packages 0 ${rtos_src})
-
 foreach(package ${packages})
     add_subdirectory(${package})
     include_directories(${INC_DIRS})
 endforeach()
 
+# Build RTOS
+file(GLOB RTOS_SOURCE_FILES "${rtos_src}/src/*.c")
+file(GLOB MAIN_SOURCE_FILES "${main_src}/src/*.c")
 
-add_executable(FreeRTOS.elf ${main_src}/src/main.c)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${rtos_src}/firmware/rtos.lds")
 
-target_link_libraries(FreeRTOS.elf rtos)
+
+add_executable(FreeRTOS.elf ${rtos_src}/firmware/portASM.S ${RTOS_SOURCE_FILES} ${MAIN_SOURCE_FILES} ${packages})
+
+target_compile_definitions(FreeRTOS.elf PUBLIC -DportasmHANDLE_INTERRUPT=interrupt_handler)
+
 install(TARGETS FreeRTOS.elf DESTINATION bin)
+
+# install(TARGETS ${PROJECT_NAME} DESTINATION ${out_dir}/lib)
+# install(DIRECTORY ${INCLUDE_DIRS} DESTINATION ${out_dir}/include)

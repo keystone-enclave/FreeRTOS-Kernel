@@ -14,17 +14,17 @@ TARGET = FreeRTOS.elf
 
 # FS_SRC = fs/src/diskio.c fs/src/ff.c fs/src/ffsystem.c
 
-MALLOC_SRC = lib/utils/MemMang/heap_4.c
+MALLOC_SRC = lib/utils/MemMang/src/heap_4.c
 
-SRCS = lib/rtos/src/croutine.c lib/rtos/src/event_groups.c lib/rtos/src/list.c lib/rtos/src/queue.c lib/rtos/src/stream_buffer.c lib/rtos/src/tasks.c lib/rtos/src/timers.c lib/rtos/src/port.c lib/utils/lib/src/string.c lib/main/src/main.c lib/rtos/src/sbi.c lib/utils/lib/src/printf.c lib/rtos/src/syscall.c lib/utils/elf/src/elf32.c lib/utils/elf/src/elf.c
+SRCS = lib/rtos/src/croutine.c lib/rtos/src/event_groups.c lib/rtos/src/list.c lib/rtos/src/queue.c lib/rtos/src/stream_buffer.c lib/rtos/src/tasks.c lib/rtos/src/timers.c lib/rtos/src/port.c lib/utils/lib/src/string.c main/src/main.c lib/rtos/src/sbi.c lib/utils/lib/src/printf.c lib/rtos/src/syscall.c lib/utils/elf/src/elf32.c lib/utils/elf/src/elf.c
  
-ASM_SRCS = firmware/portASM.S
+ASM_SRCS = lib/rtos/firmware/portASM.S
 
 .PHONY: clean
 
 all: $(TARGET)
 
 $(TARGET): clean $(ASM_SRCS) $(SRCS) 
-	$(CC) -o $(TARGET) $(CFLAGS) $(ASM_SRCS) $(SRCS) $(FS_SRC) $(MALLOC_SRC) -T firmware/rtos.lds $(LDFLAGS)
+	$(CC) -o $(TARGET) $(CFLAGS) $(ASM_SRCS) $(SRCS) $(FS_SRC) $(MALLOC_SRC) -T lib/rtos/firmware/rtos.lds $(LDFLAGS)
 clean:
 	-rm $(TARGET)  
