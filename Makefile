@@ -11,7 +11,7 @@ OPTION_FLAGS = -DportasmHANDLE_INTERRUPT=interrupt_handler
 CFLAGS += -I./lib/rtos/include  -I./fs/include -I./lib/utils/elf/include -I./lib/utils/lib/include
 CFLAGS += $(OPTION_FLAGS)
 
-TARGET = FreeRTOS.elf
+TARGET = freeRTOS
 
 MALLOC_SRC = lib/utils/MemMang/src/heap_4.c
 
