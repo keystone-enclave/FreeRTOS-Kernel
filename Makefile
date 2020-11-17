@@ -8,14 +8,14 @@ LDFLAGS = -static -nostdlib
 
 OPTION_FLAGS = -DportasmHANDLE_INTERRUPT=interrupt_handler
 
-CFLAGS += -I./lib/rtos/include  -I./fs/include -I./lib/utils/elf/include -I./lib/utils/lib/include
+CFLAGS += -I./lib/rtos/include  -I./fs/include -I./lib/utils/elf/include -I./lib/utils/lib/include -I./lib/utils/FreeRTOS-Plus-CLI
 CFLAGS += $(OPTION_FLAGS)
 
 TARGET = freeRTOS
 
 MALLOC_SRC = lib/utils/MemMang/src/heap_4.c
 
-SRCS = lib/rtos/src/croutine.c lib/rtos/src/event_groups.c lib/rtos/src/list.c lib/rtos/src/queue.c lib/rtos/src/stream_buffer.c lib/rtos/src/tasks.c lib/rtos/src/timers.c lib/rtos/src/port.c lib/utils/lib/src/string.c main/src/main.c lib/rtos/src/sbi.c lib/utils/lib/src/printf.c lib/rtos/src/syscall.c lib/rtos/src/enclave.c lib/utils/elf/src/elf32.c lib/utils/elf/src/elf.c
+SRCS = lib/rtos/src/croutine.c lib/rtos/src/event_groups.c lib/rtos/src/list.c lib/rtos/src/queue.c lib/rtos/src/stream_buffer.c lib/rtos/src/tasks.c lib/rtos/src/timers.c lib/rtos/src/port.c lib/utils/lib/src/string.c main/src/main.c lib/rtos/src/sbi.c lib/utils/lib/src/printf.c lib/rtos/src/syscall.c lib/rtos/src/enclave.c lib/utils/elf/src/elf32.c lib/utils/elf/src/elf.c lib/utils/FreeRTOS-Plus-CLI/FreeRTOS_CLI.c
  
 ASM_SRCS = lib/rtos/firmware/portASM.S
 

@@ -97,4 +97,6 @@ your application. */
 
 /* A header file that defines trace macro can be included here. */
 
+#define configCOMMAND_INT_MAX_OUTPUT_SIZE       1024
+
 #endif /* FREERTOS_CONFIG_H */
