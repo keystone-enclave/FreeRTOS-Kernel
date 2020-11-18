@@ -41,8 +41,11 @@
 #define SBI_CALL_3(___which, ___arg0, ___arg1, ___arg2) \
   SBI_CALL(___which, ___arg0, ___arg1, ___arg2)
 
-void
-sbi_putchar(char c);
+int
+sbi_putchar(int c);
+
+int
+sbi_getchar();
 
 void
 sbi_set_timer(uint64_t stime_value); 

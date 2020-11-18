@@ -1,9 +1,14 @@
 #include "sbi.h"
 #include "csr.h"
 
-void
-sbi_putchar(char character) {
-  SBI_CALL_1(SBI_CONSOLE_PUTCHAR, character);
+int
+sbi_putchar(int character) {
+  return SBI_CALL_1(SBI_CONSOLE_PUTCHAR, character);
+}
+
+int
+sbi_getchar() {
+  return SBI_CALL_0(SBI_CONSOLE_GETCHAR);
 }
 
 void

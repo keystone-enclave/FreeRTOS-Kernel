@@ -12,14 +12,14 @@
 extern void vTaskSwitchContext( void );
 extern void vTaskDeleteSelf();
 
-void
-syscall_putchar(char character) {
-  SBI_CALL_1(SYSCALL_CONSOLE_PUTCHAR, character);
+int
+syscall_putchar(int character) {
+  return SBI_CALL_1(SYSCALL_CONSOLE_PUTCHAR, character);
 }
 
-void
-sbi_getchar() {
-  SBI_CALL_0(SBI_CONSOLE_GETCHAR);
+int
+syscall_getchar() {
+  return SBI_CALL_0(SBI_CONSOLE_GETCHAR);
 }
 
 

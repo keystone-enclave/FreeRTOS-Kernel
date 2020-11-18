@@ -106,6 +106,15 @@ strnlen(const char *str, size_t maxlen)
     return i;
 }
 
+char *
+strcpy (char *dest, const char *src)
+{
+  for (char *d = dest; *src ; d++, src++) {
+    *d = *src;
+  }
+  return dest;
+}
+
 /* Received from https://code.woboq.org/userspace/glibc/string/strcmp.c.html*/
 /* Compare no more than N characters of S1 and S2,
    returning less than, equal to or greater than zero
