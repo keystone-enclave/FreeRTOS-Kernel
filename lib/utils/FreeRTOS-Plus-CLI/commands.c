@@ -13,7 +13,7 @@
 prototype. */
 static BaseType_t prvTaskStatsCommand( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
 {
-const char *const pcHeader = "Task          State  Priority  Stack	#\r\n************************************************\r\n";
+const char *const pcHeader = "Task          State  Priority  Stack	#\n************************************************\n";
 
 	/* Remove compile time warnings about unused parameters, and check the
 	write buffer is not NULL.  NOTE - for simplicity, this example assumes the
@@ -35,7 +35,7 @@ const char *const pcHeader = "Task          State  Priority  Stack	#\r\n********
 static const CLI_Command_Definition_t xTaskStats =
 {
 	"task-stats", /* The command string to type. */
-	"\r\ntask-stats:\r\n Displays a table showing the state of each FreeRTOS task\r\n\r\n",
+	"\ntask-stats:\n Displays a table showing the state of each FreeRTOS task\n\n",
 	prvTaskStatsCommand, /* The function to run. */
 	0 /* No parameters are expected. */
 };
@@ -76,12 +76,12 @@ static char pcOutputString[ MAX_OUTPUT_LENGTH ], pcInputString[ MAX_INPUT_LENGTH
         Blocked state until a character is received. */
         FreeRTOS_read( xConsole, &cRxedChar, sizeof( cRxedChar ) );
 
-        if( cRxedChar == '\n' )
+        if( cRxedChar == '\n' || cRxedChar == '\r' )
         {
             /* A newline character was received, so the input command string is
             complete and can be processed.  Transmit a line separator, just to
             make the output easier to read. */
-            FreeRTOS_write( xConsole, "\r\n", strlen( "\r\n" ) );
+            FreeRTOS_write( xConsole, "\n", strlen( "\n" ) );
 
             /* The command interpreter is called repeatedly until it returns
             pdFALSE.  See the "Implementing a command" documentation for an
@@ -121,7 +121,7 @@ static char pcOutputString[ MAX_OUTPUT_LENGTH ], pcInputString[ MAX_INPUT_LENGTH
             {
                 /* Ignore carriage returns. */
             }
-            else if( cRxedChar == '\b' )
+            else if( cRxedChar == 127 ) /* Used to be `\b`. */
             {
                 /* Backspace was pressed.  Erase the last character in the input
                 buffer - if there are any. */
@@ -129,6 +129,12 @@ static char pcOutputString[ MAX_OUTPUT_LENGTH ], pcInputString[ MAX_INPUT_LENGTH
                 {
                     cInputIndex--;
                     pcInputString[ cInputIndex ] = '\0';
+
+                    /* Hacky solution to backspaces */
+                    FreeRTOS_write( xConsole, "\b", strlen( "\b" ) );
+                    cRxedChar = 127;
+                    FreeRTOS_write( xConsole, &cRxedChar, strlen( &cRxedChar ) );
+                    FreeRTOS_write( xConsole, "\b", strlen( "\b" ) );
                 }
             }
             else
@@ -141,6 +147,7 @@ static char pcOutputString[ MAX_OUTPUT_LENGTH ], pcInputString[ MAX_INPUT_LENGTH
                 {
                     pcInputString[ cInputIndex ] = cRxedChar;
                     cInputIndex++;
+                    FreeRTOS_write( xConsole, &cRxedChar, sizeof( cRxedChar ) );
                 }
             }
         }
