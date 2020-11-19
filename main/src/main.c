@@ -7,9 +7,12 @@
 #include <enclave.h> 
 #include <elf.h> 
 #include <stdio.h>
+#include<string.h>
 
+#include "FreeRTOS_IO.h"
 #include "console.h"
 #include "commands.h"
+#include "devices.h"
 
 #define HEAP_SIZE  0x800 
 
@@ -28,9 +31,15 @@ TaskHandle_t taskCLI;
 TaskHandle_t enclave1; 
 TaskHandle_t enclave2; 
 
+Peripheral_Descriptor_t uart;
 
 int main( void )
 {
+   /* Register devices with the FreeRTOS+IO. */
+	vRegisterIODevices();
+   uart = FreeRTOS_open("/dev/uart", 0);
+
+   printf("UART: %p\n", uart);
 
    extern uintptr_t _rtos_base; 
    extern uintptr_t _rtos_end; 
@@ -52,10 +61,10 @@ int main( void )
    xTaskCreateEnclave((uintptr_t) &_task_1_start, elf_size, "fibonacci", 30, &enclave1); 
    xTaskCreateEnclave((uintptr_t) &_task_2_start, elf_size, "attest", 30, &enclave2); 
    
-   xTaskCreate(taskTestFn, "taskTest1", configMINIMAL_STACK_SIZE, NULL, 25, &taskTest); 
+   xTaskCreate(taskTestFn, "taskTest1", configMINIMAL_STACK_SIZE, (void*) 5, 25, &taskTest); 
    xTaskCreate(taskTestFn2, "taskTest2", configMINIMAL_STACK_SIZE, NULL, 21, &taskTest2);
 
-   xTaskCreate( vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, NULL, 1, &taskCLI );
+   xTaskCreate( vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void*) uart, 1, &taskCLI );
 
    /* Register commands with the FreeRTOS+CLI command interpreter. */
 	vRegisterCLICommands();
@@ -71,6 +80,7 @@ int main( void )
 }
 
 static void taskTestFn(void *pvParameters){
+   printf("Your number is: %i\n", (int)pvParameters);
    printf("Untrusted Task 1 DONE\n"); 
    syscall_task_return();
 }
