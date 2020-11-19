@@ -5420,19 +5420,18 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
 
 /* -------------------- Keystone Changes  ------------------------ */
 
-
-BaseType_t _enclave_init(struct register_sbi_arg *register_args,
-                            const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-                            UBaseType_t uxPriority,
-                            TaskHandle_t * const pxCreatedTask ){
-
-    TCB_t * pxNewTCB;
+uintptr_t _create_task_enclave(struct register_sbi_arg *register_args,
+                               const char *const pcName,
+                               UBaseType_t uxPriority,
+                               TaskHandle_t *pxCreatedTask)
+{
+    TCB_t *pxNewTCB;
     BaseType_t xReturn;
 
-     /* Allocate space for the TCB.  Where the memory comes from depends on
+    /* Allocate space for the TCB.  Where the memory comes from depends on
                  * the implementation of the port malloc function and whether or not static
                  * allocation is being used. */
-    pxNewTCB = ( TCB_t * ) pvPortMalloc( sizeof( TCB_t ) );
+    pxNewTCB = (TCB_t *)pvPortMalloc(sizeof(TCB_t));
 
     if (pxNewTCB != NULL)
     {
@@ -5448,7 +5447,7 @@ BaseType_t _enclave_init(struct register_sbi_arg *register_args,
         prvAddNewTaskToReadyList(pxNewTCB);
 
         pxNewTCB->task_id = registerTask(register_args);
-        pxNewTCB->is_enclave = 1; 
+        pxNewTCB->is_enclave = 1;
 
         xReturn = pdPASS;
     }
@@ -5458,14 +5457,6 @@ BaseType_t _enclave_init(struct register_sbi_arg *register_args,
     }
 
     return xReturn;
-}
-
-uintptr_t _create_task_enclave(struct register_sbi_arg *register_args,
-                                const char *const pcName,
-                                UBaseType_t uxPriority,
-                                TaskHandle_t *pxCreatedTask)
-{
-    return _enclave_init(register_args, pcName, uxPriority, pxCreatedTask);
 }
 
 int registerTask(struct register_sbi_arg *register_args)

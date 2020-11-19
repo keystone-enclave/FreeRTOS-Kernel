@@ -16,11 +16,6 @@ sbi_set_timer(uint64_t stime_value) {
 }
 
 void
-sbi_switch_task(){
-  //  SB/I_CALL_0(SBI_SWITCH_TASK); 
-}
-
-void
 sbi_enable_interrupts(){
   //  SBI_CALL_1(SBI_ENABLE_INTERRUPT, 1); 
 }
@@ -28,14 +23,4 @@ sbi_enable_interrupts(){
 void
 sbi_disable_interrupts(){
   //  SBI_CALL_1(SBI_ENABLE_INTERRUPT, 0); 
-}
-
-void ENABLE_INTERRUPTS(void){
-
-   csr_set(sstatus, SR_SIE);
-}
-
-void DISABLE_INTERRUPTS(void){
-  
-  csr_clear(sstatus, SR_SIE);
 }

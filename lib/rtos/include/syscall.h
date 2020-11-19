@@ -6,9 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYSCALL_SET_TIMER                   1000
-#define SYSCALL_CONSOLE_PUTCHAR             1001
-#define SYSCALL_CONSOLE_GETCHAR             1002
+#define SBI_SHUTDOWN 8
 
 #define SBI_ENABLE_INTERRUPT     200
 #define SBI_SWITCH_TASK          201

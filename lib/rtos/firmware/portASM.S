@@ -257,7 +257,7 @@ handle_synchronous:
 	store_x a1, 0( sp )					/* Save updated exception return address. */
 	mv a0, sp 
 	load_x sp, xISRStackTop	
-	jal vPortHandleException
+	# jal vPortHandleException
 	j processed_source
 
 # test_if_environment_call:
