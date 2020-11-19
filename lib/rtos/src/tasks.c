@@ -813,6 +813,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
             struct register_sbi_arg register_args;
             register_args.pc = pxNewTCB->pxTopOfStack[0]; 
             register_args.sp = (uintptr_t) pxNewTCB->pxTopOfStack; 
+            register_args.arg = (uintptr_t) pvParameters; 
             register_args.stack_size = 0; 
             register_args.base = 0; 
             register_args.size = 0; 

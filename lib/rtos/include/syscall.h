@@ -25,6 +25,7 @@ struct task_ctx {
 struct register_sbi_arg {
     uintptr_t pc;
 	uintptr_t sp; 
+	uintptr_t arg; 
 	uintptr_t stack_size; 
 	uintptr_t base;
 	uintptr_t size;  
