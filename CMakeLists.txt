@@ -1,8 +1,14 @@
-include(macros.cmake)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
+  include(macros.cmake)
+  use_riscv_toolchain(32)
+# else()
+#   set(CMAKE_C_COMPILER "riscv32-unknown-linux-gnu-gcc")
+#   set(CMAKE_C_LINK_EXECUTABLE "riscv32-unknown-linux-gnu-ld")
+#   set(CMAKE_OBJCOPY "riscv32-unknown-elf-objcopy")
+endif()
 
 cmake_minimum_required(VERSION 3.5)
-project(FreeRTOS.elf C ASM)
-use_riscv_toolchain(32)
+project(freeRTOS C ASM)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 ###############################################################################
@@ -32,7 +38,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -nostdlib")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DportasmHANDLE_INTERRUPT=interrupt_handler")
 
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
 set(lib_src ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set(main_src main)
@@ -91,7 +97,6 @@ file(GLOB MAIN_SOURCE_FILES "${main_src}/src/*.c")
 file(GLOB ELF_SOURCE_FILES "${utils_dir_src}/elf/src/*.c")
 file(GLOB LIB_SOURCE_FILES "${utils_dir_src}/lib/src/*.c")
 file(GLOB MEMMANG_SOURCE_FILES "${utils_dir_src}/MemMang/src/heap_4.c")
-
 include_directories(${utils_dir_src}/elf/include)
 include_directories(${utils_dir_src}/lib/include)
 
@@ -99,12 +104,14 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${rtos_src}/firmware/rt
 
 set_source_files_properties(${rtos_src}/firmware/portASM.S PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
 
-add_executable(FreeRTOS.elf ${rtos_src}/firmware/portASM.S ${RTOS_SOURCE_FILES} ${ELF_SOURCE_FILES} ${LIB_SOURCE_FILES} ${MEMMANG_SOURCE_FILES} ${MAIN_SOURCE_FILES})
-target_compile_definitions(FreeRTOS.elf PUBLIC -DportasmHANDLE_INTERRUPT=interrupt_handler)
+add_subdirectory(tests)
 
-set_property(TARGET FreeRTOS.elf PROPERTY LINK_FLAGS ${LIBGCC})
+add_executable(freeRTOS ${rtos_src}/firmware/portASM.S ${RTOS_SOURCE_FILES} ${ELF_SOURCE_FILES} ${LIB_SOURCE_FILES} ${MEMMANG_SOURCE_FILES} ${MAIN_SOURCE_FILES} tests)
+target_compile_definitions(freeRTOS PUBLIC -DportasmHANDLE_INTERRUPT=interrupt_handler tests)
 
-install(TARGETS FreeRTOS.elf DESTINATION bin)
+set_property(TARGET freeRTOS PROPERTY LINK_FLAGS ${LIBGCC})
+
+install(TARGETS freeRTOS DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
 # install(TARGETS ${PROJECT_NAME} DESTINATION ${out_dir}/lib)
 # install(DIRECTORY ${INCLUDE_DIRS} DESTINATION ${out_dir}/include)

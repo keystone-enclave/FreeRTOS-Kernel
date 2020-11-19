@@ -33,9 +33,9 @@ struct register_sbi_arg {
 
 void handle_syscalls(struct task_ctx *ctx);
 
-void syscall_putchar(char character);
+int syscall_putchar(int character);
 
-void sbi_getchar();
+int syscall_getchar();
 
 void syscall_task_yield();
 

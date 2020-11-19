@@ -11,11 +11,17 @@ OPTION_FLAGS = -DportasmHANDLE_INTERRUPT=interrupt_handler
 CFLAGS += -I./lib/rtos/include  -I./fs/include -I./lib/utils/elf/include -I./lib/utils/lib/include
 CFLAGS += $(OPTION_FLAGS)
 
-TARGET = FreeRTOS.elf
+TARGET = freeRTOS
 
 MALLOC_SRC = lib/utils/MemMang/src/heap_4.c
 
-SRCS = lib/rtos/src/croutine.c lib/rtos/src/event_groups.c lib/rtos/src/list.c lib/rtos/src/queue.c lib/rtos/src/stream_buffer.c lib/rtos/src/tasks.c lib/rtos/src/timers.c lib/rtos/src/port.c lib/utils/lib/src/string.c main/src/main.c lib/rtos/src/sbi.c lib/utils/lib/src/printf.c lib/rtos/src/syscall.c lib/rtos/src/enclave.c lib/utils/elf/src/elf32.c lib/utils/elf/src/elf.c
+SRCS = lib/rtos/src/croutine.c lib/rtos/src/event_groups.c lib/rtos/src/list.c lib/rtos/src/queue.c lib/rtos/src/stream_buffer.c lib/rtos/src/tasks.c lib/rtos/src/timers.c lib/rtos/src/port.c lib/utils/lib/src/string.c main/src/main.c lib/rtos/src/sbi.c lib/utils/lib/src/printf.c lib/utils/lib/src/stdio.c lib/rtos/src/syscall.c lib/rtos/src/enclave.c lib/utils/elf/src/elf32.c lib/utils/elf/src/elf.c
+
+CFLAGS += -I./lib/utils/FreeRTOS-Plus-CLI/include
+SRCS += lib/utils/FreeRTOS-Plus-CLI/src/FreeRTOS_CLI.c lib/utils/FreeRTOS-Plus-CLI/src/commands.c lib/utils/FreeRTOS-Plus-CLI/src/console.c
+
+CFLAGS += -I./lib/utils/FreeRTOS-Plus-IO/include
+SRCS += lib/utils/FreeRTOS-Plus-IO/src/FreeRTOS_IO.c
  
 ASM_SRCS = lib/rtos/firmware/portASM.S
 
