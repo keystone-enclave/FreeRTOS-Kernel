@@ -20,8 +20,8 @@ SRCS = lib/rtos/src/croutine.c lib/rtos/src/event_groups.c lib/rtos/src/list.c l
 CFLAGS += -I./lib/utils/FreeRTOS-Plus-CLI/include
 SRCS += lib/utils/FreeRTOS-Plus-CLI/src/FreeRTOS_CLI.c lib/utils/FreeRTOS-Plus-CLI/src/commands.c lib/utils/FreeRTOS-Plus-CLI/src/console.c
 
-CFLAGS += -I./lib/utils/FreeRTOS-Plus-IO
-SRCS += lib/utils/FreeRTOS-Plus-IO/FreeRTOS_IO.c
+CFLAGS += -I./lib/utils/FreeRTOS-Plus-IO/include
+SRCS += lib/utils/FreeRTOS-Plus-IO/src/FreeRTOS_IO.c
  
 ASM_SRCS = lib/rtos/firmware/portASM.S
 
