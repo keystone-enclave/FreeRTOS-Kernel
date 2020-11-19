@@ -30,7 +30,7 @@ ENDMACRO()
 ## CONFIGURATION/VARIABLES
 ###############################################################################
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O0 -Werror -fPIC -fno-builtin -std=c11 -g -march=rv32imafd -mabi=ilp32d")
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O0 -Werror -fPIC -fno-builtin -std=c11 -g -march=rv32imafd -mabi=ilp32d")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -nostdlib")
 # execute_process(COMMAND ${CMAKE_C_COMPILER} "--print-file-name=libgcc.a" OUTPUT_VARIABLE LIBGCC)
 # string(STRIP ${LIBGCC} LIBGCC)
@@ -38,7 +38,9 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -nostdlib")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DportasmHANDLE_INTERRUPT=interrupt_handler")
 
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/bin)
+
+set(EXECUTABLE freeRTOS)
 
 set(lib_src ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set(main_src main)
@@ -95,23 +97,36 @@ file(GLOB RTOS_SOURCE_FILES "${rtos_src}/src/*.c")
 file(GLOB MAIN_SOURCE_FILES "${main_src}/src/*.c")
 
 file(GLOB ELF_SOURCE_FILES "${utils_dir_src}/elf/src/*.c")
-file(GLOB LIB_SOURCE_FILES "${utils_dir_src}/lib/src/*.c")
-file(GLOB MEMMANG_SOURCE_FILES "${utils_dir_src}/MemMang/src/heap_4.c")
 include_directories(${utils_dir_src}/elf/include)
+
+file(GLOB LIB_SOURCE_FILES "${utils_dir_src}/lib/src/*.c")
 include_directories(${utils_dir_src}/lib/include)
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${rtos_src}/firmware/rtos.lds")
+file(GLOB CLI_SOURCE_FILES "${utils_dir_src}/FreeRTOS-Plus-CLI/src/*.c")
+include_directories(${utils_dir_src}/FreeRTOS-Plus-CLI/include)
+
+file(GLOB IO_SOURCE_FILES "${utils_dir_src}/FreeRTOS-Plus-IO/src/*.c")
+include_directories(${utils_dir_src}/FreeRTOS-Plus-IO/include)
+
+file(GLOB MEMMANG_SOURCE_FILES "${utils_dir_src}/MemMang/src/heap_4.c")
 
 set_source_files_properties(${rtos_src}/firmware/portASM.S PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
 
 add_subdirectory(tests)
 
-add_executable(freeRTOS ${rtos_src}/firmware/portASM.S ${RTOS_SOURCE_FILES} ${ELF_SOURCE_FILES} ${LIB_SOURCE_FILES} ${MEMMANG_SOURCE_FILES} ${MAIN_SOURCE_FILES} tests)
-target_compile_definitions(freeRTOS PUBLIC -DportasmHANDLE_INTERRUPT=interrupt_handler tests)
+add_executable(${EXECUTABLE} ${rtos_src}/firmware/portASM.S ${RTOS_SOURCE_FILES} ${ELF_SOURCE_FILES} ${LIB_SOURCE_FILES} ${CLI_SOURCE_FILES} ${IO_SOURCE_FILES} ${MEMMANG_SOURCE_FILES} ${MAIN_SOURCE_FILES} tests ${TEST_FILES})
 
-set_property(TARGET freeRTOS PROPERTY LINK_FLAGS ${LIBGCC})
+add_dependencies(${EXECUTABLE} ${TEST_NAMES})
 
-install(TARGETS freeRTOS DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+target_compile_definitions(${EXECUTABLE} PUBLIC -DportasmHANDLE_INTERRUPT=interrupt_handler tests)
+
+set_property(TARGET ${EXECUTABLE} PROPERTY LINK_FLAGS ${LIBGCC})
+set_target_properties(${EXECUTABLE} PROPERTIES LINK_FLAGS "-T ${rtos_src}/firmware/rtos.lds")
+set_target_properties(${EXECUTABLE} PROPERTIES COMPILE_FLAGS "-Wall -O0 -Werror -fPIC -fno-builtin -std=c11 -g -march=rv32imafd -mabi=ilp32d")
+
+install(TARGETS ${EXECUTABLE} DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+
+
 
 # install(TARGETS ${PROJECT_NAME} DESTINATION ${out_dir}/lib)
 # install(DIRECTORY ${INCLUDE_DIRS} DESTINATION ${out_dir}/include)
