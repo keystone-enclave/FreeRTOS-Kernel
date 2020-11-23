@@ -224,24 +224,32 @@ void vOutputString( const uint8_t * const pucMessage )
 	}
 }
 
-static void prvCreatedTask( void *pvParameters )
-{
-int32_t lParameterValue;
-static uint8_t pucLocalBuffer[ 60 ];
-void vOutputString( const uint8_t * const pucMessage );
+// static void prvCreatedTask( void *pvParameters )
+// {
+// int32_t lParameterValue;
+// static uint8_t pucLocalBuffer[ 60 ];
+// void vOutputString( const uint8_t * const pucMessage );
 
-	/* Cast the parameter to an appropriate type. */
-	lParameterValue = ( int32_t ) pvParameters;
+// 	/* Cast the parameter to an appropriate type. */
+// 	lParameterValue = ( int32_t ) pvParameters;
 
-	memset( ( void * ) pucLocalBuffer, 0x00, sizeof( pucLocalBuffer ) );
-	sprintf( ( char * ) pucLocalBuffer, "Created task running.  Received parameter %d\r\n\r\n", ( long ) lParameterValue );
-	vOutputString( pucLocalBuffer );
+// 	memset( ( void * ) pucLocalBuffer, 0x00, sizeof( pucLocalBuffer ) );
+// 	sprintf( ( char * ) pucLocalBuffer, "Created task running.  Received parameter %d\r\n\r\n", ( long ) lParameterValue );
+// 	vOutputString( pucLocalBuffer );
 
-	for( ;; )
-	{
-		vTaskDelay( portMAX_DELAY );
-	}
+// 	for( ;; )
+// 	{
+// 		vTaskDelay( portMAX_DELAY );
+// 	}
+// }
+
+static void taskTestFn(void *pvParameters){
+   printf("Your number is: %i\n", (int)pvParameters);
+   printf("Untrusted Task 1 DONE\n"); 
+   syscall_task_return();
 }
+
+TaskHandle_t taskTest; 
 /*-----------------------------------------------------------*/
 static portBASE_TYPE prvCreateTaskCommand( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
 {
@@ -276,7 +284,8 @@ int32_t lParameterValue;
 	}
 	else
 	{
-		if( xTaskCreate( prvCreatedTask, ( const char * ) "Created", configMINIMAL_STACK_SIZE,  ( void * ) lParameterValue, tskIDLE_PRIORITY, &xCreatedTaskHandle ) == pdPASS )
+		// else if( xTaskCreate( prvCreatedTask, ( const char * ) "Created", configMINIMAL_STACK_SIZE,  ( void * ) lParameterValue, tskIDLE_PRIORITY, &xCreatedTaskHandle ) == pdPASS )
+		if( xTaskCreate(taskTestFn, "taskTest1", configMINIMAL_STACK_SIZE, (void*) lParameterValue, 25, &taskTest)  == pdPASS )
 		{
 			strcpy( ( char * ) pcWriteBuffer, ( const char * ) pcSuccessMessage );
 		}
