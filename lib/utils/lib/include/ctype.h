@@ -1,0 +1,1 @@
+int isspace(int c);

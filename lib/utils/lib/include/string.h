@@ -15,4 +15,6 @@ size_t strnlen(const char *str, size_t maxlen);
 
 char * strcpy (char *dest, const char *src);
 char * strncpy (char *s1, const char *s2, size_t n);
+
+char * strncat (char *s1, const char *s2, size_t n);
 #endif

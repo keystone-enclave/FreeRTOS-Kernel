@@ -1,0 +1,1 @@
+int atol (const char *nptr);

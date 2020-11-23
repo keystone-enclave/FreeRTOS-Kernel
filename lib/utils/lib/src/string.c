@@ -87,7 +87,7 @@ strncpy (char *s1, const char *s2, size_t n)
   size_t size = strnlen (s2, n);
   if (size != n)
     memset (s1 + size, '\0', n - size);
-  return memcpy (s1, s2, size);
+  return memcpy (s1, s2, size + 1);
 }
 
 size_t
@@ -109,10 +109,8 @@ strnlen(const char *str, size_t maxlen)
 char *
 strcpy (char *dest, const char *src)
 {
-  for (char *d = dest; *src ; d++, src++) {
-    *d = *src;
-  }
-  return dest;
+  size_t size = strlen(src);
+  return memcpy(dest, src, size + 1);
 }
 
 /* Received from https://code.woboq.org/userspace/glibc/string/strcmp.c.html*/
@@ -158,4 +156,17 @@ strncmp (const char *s1, const char *s2, size_t n)
       n--;
     }
   return c1 - c2;
+}
+
+/* Received from https://code.woboq.org/userspace/glibc/string/strncat.c.html */
+char *
+strncat (char *s1, const char *s2, size_t n)
+{
+  char *s = s1;
+  /* Find the end of S1.  */
+  s1 += strlen (s1);
+  size_t ss = strnlen (s2, n);
+  s1[ss] = '\0';
+  memcpy (s1, s2, ss);
+  return s;
 }

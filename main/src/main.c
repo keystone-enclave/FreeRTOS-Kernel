@@ -7,7 +7,7 @@
 #include <enclave.h> 
 #include <elf.h> 
 #include <stdio.h>
-#include<string.h>
+#include <string.h>
 
 #include "FreeRTOS_IO.h"
 #include "console.h"
