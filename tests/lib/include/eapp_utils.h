@@ -10,6 +10,12 @@
 
 #define SBI_SWITCH_TASK    201
 #define SBI_ATTEST_TASK    203
+#define SBI_SEND_TASK      204
+#define SBI_RECV_TASK      205
+
+#define SBI_SM_UID               109
+#define SBI_SM_MAILBOX_SEND      110
+#define SBI_SM_MAILBOX_RECV      111
 
 #define SBI_CALL(___which, ___arg0, ___arg1, ___arg2)            \
   ({                                                             \
@@ -40,5 +46,9 @@ sbi_putchar(char character);
 void syscall_task_yield();
 
 void syscall_task_return();
+
+
+int sbi_recv(int task_id, void *msg, int size);
+int sbi_send(int task_id, void *msg, int size);
 
 #endif

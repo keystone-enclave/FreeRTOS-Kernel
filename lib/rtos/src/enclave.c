@@ -31,7 +31,23 @@ uintptr_t xTaskCreateEnclave(uintptr_t start, uintptr_t size,
     elf_getSectionNamed(&elf, ".stack", &i);
     register_args.sp = (uintptr_t) ((char *) start + elf_getSectionOffset(&elf, i)); 
     register_args.stack_size = elf_getSectionSize(&elf, i);
- 
+
+
+    uintptr_t *got;
+    int got_size;
+
+    //If there is a GOT, readjust the offset manually. 
+    if (elf_getSectionNamed(&elf, ".got", &i))
+    {
+        got = (uintptr_t *)((char *)start + elf_getSectionOffset(&elf, i));
+        got_size = (elf_getSectionSize(&elf, i)) / sizeof(uintptr_t);
+
+        for (int got_id = 0; got_id < got_size; got_id++)
+        {
+            got[got_id] = (uintptr_t)((char *)start + got[got_id]);
+        }
+    }
+
     register_args.base = start;
     register_args.size = size;
     register_args.enclave = 1; 
