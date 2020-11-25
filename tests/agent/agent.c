@@ -178,7 +178,7 @@ void EAPP_ENTRY eapp_entry()
         }
         if (i % 10 == 0)
         {
-            printf("Episode: %d, Steps taken: %d, Reward: %d, Epsilon: %f\n", i, j, rewards_current_episode, e_greedy);
+            printf("Episode: %d, Steps taken: %d, Reward: %d\n", i, j, rewards_current_episode);
         }
     }
 
