@@ -74,4 +74,19 @@ SECTIONS
     _task_2_end = .; 
   }  
 
+
+    .agent : {
+    _agent_start = .; 
+    *(.agent*)  
+    . = ALIGN(0x1000);
+    _agent_end = .; 
+  }  
+
+  .simulator : {
+    _simulator_start = .; 
+    *(.simulator*)  
+    . = ALIGN(0x1000);
+    _simulator_end = .; 
+  }  
+
 }

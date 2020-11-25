@@ -31,6 +31,9 @@ TaskHandle_t taskCLI;
 TaskHandle_t enclave1; 
 TaskHandle_t enclave2; 
 
+TaskHandle_t enclave3; 
+TaskHandle_t enclave4; 
+
 Peripheral_Descriptor_t uart;
 
 int main( void )
@@ -50,16 +53,31 @@ int main( void )
    extern char * _task_2_start; 
    extern char *_task_2_end; 
 
+   extern char * _agent_start; 
+   extern char *_agent_end; 
 
-   size_t elf_size = (char *) &_task_1_end - (char *) &_task_1_start;
+   extern char * _simulator_start; 
+   extern char *_simulator_end; 
+
+
+   // size_t elf_size_1 = (char *) &_task_1_end - (char *) &_task_1_start;
+   // size_t elf_size_2 = (char *) &_task_2_end - (char *) &_task_2_start;
+   size_t elf_size_3 = (char *) &_agent_end - (char *) &_agent_start;
+   size_t elf_size_4 = (char *) &_simulator_end - (char *) &_simulator_start;
 
 
    printf("Free RTOS booted at 0x%p-0x%p!\n", &_rtos_base, &_rtos_end); 
    printf("Enclave 1 at 0x%p-0x%p!\n", &_task_1_start, &_task_1_end); 
    printf("Enclave 2 at 0x%p-0x%p!\n", &_task_2_start, &_task_2_end);
 
-   xTaskCreateEnclave((uintptr_t) &_task_1_start, elf_size, "fibonacci", 30, &enclave1); 
-   xTaskCreateEnclave((uintptr_t) &_task_2_start, elf_size, "attest", 30, &enclave2); 
+   printf("Agent at 0x%p-0x%p!\n", &_agent_start, &_agent_end);
+   printf("Simulator at 0x%p-0x%p!\n", &_simulator_start, &_simulator_end);
+
+   // xTaskCreateEnclave((uintptr_t) &_task_1_start, elf_size_1, "fibonacci", 30, &enclave1); 
+   // xTaskCreateEnclave((uintptr_t) &_task_2_start, elf_size_2, "attest", 30, &enclave2); 
+
+   xTaskCreateEnclave((uintptr_t) &_agent_start, elf_size_3, "agent", 30, &enclave3); 
+   xTaskCreateEnclave((uintptr_t) &_simulator_start, elf_size_4, "simulator", 30, &enclave4); 
    
    xTaskCreate(taskTestFn, "taskTest1", configMINIMAL_STACK_SIZE, (void*) 5, 25, &taskTest); 
    xTaskCreate(taskTestFn2, "taskTest2", configMINIMAL_STACK_SIZE, NULL, 21, &taskTest2);
