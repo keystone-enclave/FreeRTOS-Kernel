@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "FreeRTOS_IO.h"
+#include "CLI_functions.h"
 #include "console.h"
 #include "commands.h"
 #include "devices.h"
@@ -60,10 +61,10 @@ int main( void )
    extern char *_simulator_end; 
 
 
-   // size_t elf_size_1 = (char *) &_task_1_end - (char *) &_task_1_start;
-   // size_t elf_size_2 = (char *) &_task_2_end - (char *) &_task_2_start;
-   size_t elf_size_3 = (char *) &_agent_end - (char *) &_agent_start;
-   size_t elf_size_4 = (char *) &_simulator_end - (char *) &_simulator_start;
+   size_t elf_size_1 = (char *) &_task_1_end - (char *) &_task_1_start;
+   size_t elf_size_2 = (char *) &_task_2_end - (char *) &_task_2_start;
+   // size_t elf_size_3 = (char *) &_agent_end - (char *) &_agent_start;
+   // size_t elf_size_4 = (char *) &_simulator_end - (char *) &_simulator_start;
 
 
    printf("Free RTOS booted at 0x%p-0x%p!\n", &_rtos_base, &_rtos_end); 
@@ -73,14 +74,15 @@ int main( void )
    printf("Agent at 0x%p-0x%p!\n", &_agent_start, &_agent_end);
    printf("Simulator at 0x%p-0x%p!\n", &_simulator_start, &_simulator_end);
 
-   // xTaskCreateEnclave((uintptr_t) &_task_1_start, elf_size_1, "fibonacci", 30, &enclave1); 
-   // xTaskCreateEnclave((uintptr_t) &_task_2_start, elf_size_2, "attest", 30, &enclave2); 
+   xTaskCreateEnclave((uintptr_t) &_task_1_start, elf_size_1, "fibonacci", 30, &enclave1); 
+   xTaskCreateEnclave((uintptr_t) &_task_2_start, elf_size_2, "attest", 30, &enclave2); 
 
-   xTaskCreateEnclave((uintptr_t) &_agent_start, elf_size_3, "agent", 30, &enclave3); 
-   xTaskCreateEnclave((uintptr_t) &_simulator_start, elf_size_4, "simulator", 30, &enclave4); 
+   // xTaskCreateEnclave((uintptr_t) &_agent_start, elf_size_3, "agent", 30, &enclave3); 
+   // xTaskCreateEnclave((uintptr_t) &_simulator_start, elf_size_4, "simulator", 30, &enclave4); 
    
    xTaskCreate(taskTestFn, "taskTest1", configMINIMAL_STACK_SIZE, (void*) 5, 25, &taskTest); 
    xTaskCreate(taskTestFn2, "taskTest2", configMINIMAL_STACK_SIZE, NULL, 21, &taskTest2);
+   FreeRTOS_RegisterFunction( "taskTest2", taskTestFn2, 0 );
 
    xTaskCreate( vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void*) uart, 1, &taskCLI );
 
