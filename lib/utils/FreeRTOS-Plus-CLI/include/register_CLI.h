@@ -1,0 +1,1 @@
+// BaseType_t FreeRTOS_CLIRegisterFunction( const char * taskName, const char * helpString, const void * prvFunction, size_t enclaveType );
