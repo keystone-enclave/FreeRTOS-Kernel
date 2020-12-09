@@ -112,13 +112,13 @@ file(GLOB MEMMANG_SOURCE_FILES "${utils_dir_src}/MemMang/src/heap_4.c")
 
 set_source_files_properties(${rtos_src}/firmware/portASM.S PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
 
-add_subdirectory(tests)
+add_subdirectory(sdk)
 
-add_executable(${EXECUTABLE} ${rtos_src}/firmware/portASM.S ${RTOS_SOURCE_FILES} ${ELF_SOURCE_FILES} ${LIB_SOURCE_FILES} ${CLI_SOURCE_FILES} ${IO_SOURCE_FILES} ${MEMMANG_SOURCE_FILES} ${MAIN_SOURCE_FILES} tests ${TEST_FILES})
+add_executable(${EXECUTABLE} ${rtos_src}/firmware/portASM.S ${RTOS_SOURCE_FILES} ${ELF_SOURCE_FILES} ${LIB_SOURCE_FILES} ${CLI_SOURCE_FILES} ${IO_SOURCE_FILES} ${MEMMANG_SOURCE_FILES} ${MAIN_SOURCE_FILES} sdk ${TEST_FILES})
 
 add_dependencies(${EXECUTABLE} ${TEST_NAMES})
 
-target_compile_definitions(${EXECUTABLE} PUBLIC -DportasmHANDLE_INTERRUPT=interrupt_handler tests)
+target_compile_definitions(${EXECUTABLE} PUBLIC -DportasmHANDLE_INTERRUPT=interrupt_handler sdk)
 
 set_property(TARGET ${EXECUTABLE} PROPERTY LINK_FLAGS ${LIBGCC})
 set_target_properties(${EXECUTABLE} PROPERTIES LINK_FLAGS "-T ${rtos_src}/firmware/rtos.lds")
