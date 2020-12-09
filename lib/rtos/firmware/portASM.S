@@ -107,6 +107,8 @@ at the top of this file. */
 .global pxPortInitialiseStack
 .global setup_rtos
 .global switch_tasks
+.global xPortStartTask
+.global xPortTaskReturn
 .extern pxCurrentTCB
 .extern ulPortTrapHandler
 .extern vTaskSwitchContext
@@ -126,7 +128,6 @@ at the top of this file. */
 setup_rtos:
   la sp, __stack_top
   la t0, freertos_risc_v_trap_handler
-#   csrrw x0, stvec, t0 
   jal main
 
   .endfunc
@@ -326,6 +327,181 @@ processed_source:
 	.endfunc
 /*-----------------------------------------------------------*/
 
+
+.align 8
+.func
+xPortStartTask:
+#a0 <- contains task sp
+
+	//Store scheduler's context to ISR
+	//Store scheduler's sp on first element of ISR
+	mv t0, sp
+	load_x sp, xISRStackTop	
+
+	store_x t0, 0 (sp)
+	store_x x1, 1*portWORD_SIZE(sp)
+	# store_x x2, 2*portWORD_SIZE(sp)
+	store_x x3, 3*portWORD_SIZE(sp)
+	store_x x4, 4*portWORD_SIZE(sp)
+	store_x x5, 5*portWORD_SIZE(sp)
+	store_x x6, 6*portWORD_SIZE(sp)
+	store_x x7, 7*portWORD_SIZE(sp)
+	store_x x8, 8*portWORD_SIZE(sp)
+	store_x x9, 9*portWORD_SIZE(sp)
+	store_x x10, 10*portWORD_SIZE(sp)
+	store_x x11, 11*portWORD_SIZE(sp)
+	store_x x12, 12*portWORD_SIZE(sp)
+	store_x x13, 13*portWORD_SIZE(sp)
+	store_x x14, 14*portWORD_SIZE(sp)
+	store_x x15, 15*portWORD_SIZE(sp)
+	store_x x16, 16*portWORD_SIZE(sp)
+	store_x x17, 17*portWORD_SIZE(sp)
+	store_x x18, 18*portWORD_SIZE(sp)
+	store_x x19, 19*portWORD_SIZE(sp)
+	store_x x20, 20*portWORD_SIZE(sp)
+	store_x x21, 21*portWORD_SIZE(sp)
+	store_x x22, 22*portWORD_SIZE(sp)
+	store_x x23, 23*portWORD_SIZE(sp)
+	store_x x24, 24*portWORD_SIZE(sp)
+	store_x x25, 25*portWORD_SIZE(sp)
+	store_x x26, 26*portWORD_SIZE(sp)
+	store_x x27, 27*portWORD_SIZE(sp)
+	store_x x28, 28*portWORD_SIZE(sp)
+	store_x x29, 29*portWORD_SIZE(sp)
+	store_x x30, 30*portWORD_SIZE(sp)
+	store_x x31, 31*portWORD_SIZE(sp)
+	
+	//Load register contents 
+	load_x sp, pxCurrentTCB
+	load_x sp, 0(sp)
+
+	//Load the current PC of the TCB to ra
+	load_x  ra, 0(sp) //x1 
+
+	load_x  x3, 3 * portWORD_SIZE( sp )		
+	load_x  x4, 4 * portWORD_SIZE( sp )		
+	load_x  x5, 5 * portWORD_SIZE( sp )		
+	load_x  x6, 6 * portWORD_SIZE( sp )		
+	load_x  x7, 7 * portWORD_SIZE( sp )	
+	load_x  x8, 8 * portWORD_SIZE( sp )	
+	load_x  x9, 9 * portWORD_SIZE( sp )	
+	load_x  x10, 10 * portWORD_SIZE( sp )	
+	load_x  x11, 11 * portWORD_SIZE( sp )
+	load_x  x12, 12 * portWORD_SIZE( sp )	
+	load_x  x13, 13 * portWORD_SIZE( sp )	
+	load_x  x14, 14 * portWORD_SIZE( sp )	
+	load_x  x15, 15 * portWORD_SIZE( sp )	
+	load_x  x16, 16 * portWORD_SIZE( sp )	
+	load_x  x17, 17 * portWORD_SIZE( sp )	
+	load_x  x18, 18 * portWORD_SIZE( sp )	
+	load_x  x19, 19 * portWORD_SIZE( sp )
+	load_x  x20, 20 * portWORD_SIZE( sp )	
+	load_x  x21, 21 * portWORD_SIZE( sp )	 
+	load_x  x22, 22 * portWORD_SIZE( sp )	
+	load_x  x23, 23 * portWORD_SIZE( sp )	
+	load_x  x24, 24 * portWORD_SIZE( sp )	
+	load_x  x25, 25 * portWORD_SIZE( sp )	
+	load_x  x26, 26 * portWORD_SIZE( sp )	
+	load_x  x27, 27 * portWORD_SIZE( sp )	
+	load_x  x28, 28 * portWORD_SIZE( sp )	
+	load_x  x26, 26 * portWORD_SIZE( sp )	
+	load_x  x27, 27 * portWORD_SIZE( sp )	
+	load_x  x28, 28 * portWORD_SIZE( sp )	
+	load_x  x29, 29 * portWORD_SIZE( sp )	
+	load_x  x30, 30 * portWORD_SIZE( sp )	
+	load_x  x31, 31 * portWORD_SIZE( sp )	
+
+	addi sp, sp, (32 * portWORD_SIZE)
+
+	ret
+.endfunc
+
+
+.align 8
+.func
+xPortTaskReturn:
+#a0 has return code
+
+	addi sp, sp, -(32 * portWORD_SIZE)
+
+	store_x ra, 0 (sp)
+
+	store_x x3, 3*portWORD_SIZE(sp)
+	store_x x4, 4*portWORD_SIZE(sp)
+	store_x x5, 5*portWORD_SIZE(sp)
+	store_x x6, 6*portWORD_SIZE(sp)
+	store_x x7, 7*portWORD_SIZE(sp)
+	store_x x8, 8*portWORD_SIZE(sp)
+	store_x x9, 9*portWORD_SIZE(sp)
+	store_x x10, 10*portWORD_SIZE(sp)
+	store_x x11, 11*portWORD_SIZE(sp)
+	store_x x12, 12*portWORD_SIZE(sp)
+	store_x x13, 13*portWORD_SIZE(sp)
+	store_x x14, 14*portWORD_SIZE(sp)
+	store_x x15, 15*portWORD_SIZE(sp)
+	store_x x16, 16*portWORD_SIZE(sp)
+	store_x x17, 17*portWORD_SIZE(sp)
+	store_x x18, 18*portWORD_SIZE(sp)
+	store_x x19, 19*portWORD_SIZE(sp)
+	store_x x20, 20*portWORD_SIZE(sp)
+	store_x x21, 21*portWORD_SIZE(sp)
+	store_x x22, 22*portWORD_SIZE(sp)
+	store_x x23, 23*portWORD_SIZE(sp)
+	store_x x24, 24*portWORD_SIZE(sp)
+	store_x x25, 25*portWORD_SIZE(sp)
+	store_x x26, 26*portWORD_SIZE(sp)
+	store_x x27, 27*portWORD_SIZE(sp)
+	store_x x28, 28*portWORD_SIZE(sp)
+	store_x x29, 29*portWORD_SIZE(sp)
+	store_x x30, 30*portWORD_SIZE(sp)
+	store_x x31, 31*portWORD_SIZE(sp)	
+
+	load_x t0, pxCurrentTCB 
+	store_x sp, 0(t0)
+
+	//Load scheduler registers
+	load_x sp, xISRStackTop	
+
+	//Stores return code as return value
+	store_x a0, 10*portWORD_SIZE(sp)
+
+	load_x x1, 1*portWORD_SIZE(sp)
+	# store_x x2, 2*portWORD_SIZE(sp)
+	load_x x3, 3*portWORD_SIZE(sp)
+	load_x x4, 4*portWORD_SIZE(sp)
+	load_x x5, 5*portWORD_SIZE(sp)
+	load_x x6, 6*portWORD_SIZE(sp)
+	load_x x7, 7*portWORD_SIZE(sp)
+	load_x x8, 8*portWORD_SIZE(sp)
+	load_x x9, 9*portWORD_SIZE(sp)
+	load_x x10, 10*portWORD_SIZE(sp)
+	load_x x11, 11*portWORD_SIZE(sp)
+	load_x x12, 12*portWORD_SIZE(sp)
+	load_x x13, 13*portWORD_SIZE(sp)
+	load_x x14, 14*portWORD_SIZE(sp)
+	load_x x15, 15*portWORD_SIZE(sp)
+	load_x x16, 16*portWORD_SIZE(sp)
+	load_x x17, 17*portWORD_SIZE(sp)
+	load_x x18, 18*portWORD_SIZE(sp)
+	load_x x19, 19*portWORD_SIZE(sp)
+	load_x x20, 20*portWORD_SIZE(sp)
+	load_x x21, 21*portWORD_SIZE(sp)
+	load_x x22, 22*portWORD_SIZE(sp)
+	load_x x23, 23*portWORD_SIZE(sp)
+	load_x x24, 24*portWORD_SIZE(sp)
+	load_x x25, 25*portWORD_SIZE(sp)
+	load_x x26, 26*portWORD_SIZE(sp)
+	load_x x27, 27*portWORD_SIZE(sp)
+	load_x x28, 28*portWORD_SIZE(sp)
+	load_x x29, 29*portWORD_SIZE(sp)
+	load_x x30, 30*portWORD_SIZE(sp)
+	load_x x31, 31*portWORD_SIZE(sp)
+
+	//Load original sp 
+	load_x sp, 0(sp) 
+	ret
+.endfunc
+
 .align 8
 .func
 xPortStartFirstTask:
@@ -460,22 +636,29 @@ pxPortInitialiseStack:
 	# slli t1, t1, 4
 	# or t0, t0, t1						/* Set MPIE and MPP bits in mstatus value. */
 
-	addi a0, a0, -(1 * portWORD_SIZE)
-	store_x t0, 0(a0)					/* mstatus onto the stack. */
-	addi a0, a0, -(22 * portWORD_SIZE)	/* Space for registers x11-x31. */
-	store_x a2, 0(a0)					/* Task parameters (pvParameters parameter) goes into register X10/a0 on the stack. */
-	addi a0, a0, -(6 * portWORD_SIZE)	/* Space for registers x5-x9. */
-	store_x a2, 0(a0)					/* Return address onto the stack, could be portTASK_RETURN_ADDRESS */
-	addi t0, x0, portasmADDITIONAL_CONTEXT_SIZE /* The number of chip specific additional registers. */
-chip_specific_stack_frame:				/* First add any chip specific registers to the stack frame being created. */
-	beq t0, x0, 1f						/* No more chip specific registers to save. */
-	addi a0, a0, -portWORD_SIZE			/* Make space for chip specific register. */
-	store_x x0, 0(a0)					/* Give the chip specific register an initial value of zero. */
-	addi t0, t0, -1						/* Decrement the count of chip specific registers remaining. */
-	j chip_specific_stack_frame			/* Until no more chip specific registers. */
-1:
-	addi a0, a0, -(1 * portWORD_SIZE)
-	store_x a1, 0(a0)					/* mret value (pxCode parameter) onto the stack. */
+	addi a0, a0, -(32 * portWORD_SIZE)
+
+	//Store return code 
+	store_x a1, 0*portWORD_SIZE(a0)
+	//Store parameter at x10 
+	store_x a2, 10*portWORD_SIZE(a0) 
+
+	# addi a0, a0, -(1 * portWORD_SIZE)
+	# store_x t0, 0(a0)					/* mstatus onto the stack. */
+# 	addi a0, a0, -(22 * portWORD_SIZE)	/* Space for registers x11-x31. */
+# 	store_x a2, 0(a0)					/* Task parameters (pvParameters parameter) goes into register X10/a0 on the stack. */
+# 	addi a0, a0, -(6 * portWORD_SIZE)	/* Space for registers x5-x9. */
+# 	store_x a2, 0(a0)					/* Return address onto the stack, could be portTASK_RETURN_ADDRESS */
+# 	addi t0, x0, portasmADDITIONAL_CONTEXT_SIZE /* The number of chip specific additional registers. */
+# chip_specific_stack_frame:				/* First add any chip specific registers to the stack frame being created. */
+# 	beq t0, x0, 1f						/* No more chip specific registers to save. */
+# 	addi a0, a0, -portWORD_SIZE			/* Make space for chip specific register. */
+# 	store_x x0, 0(a0)					/* Give the chip specific register an initial value of zero. */
+# 	addi t0, t0, -1						/* Decrement the count of chip specific registers remaining. */
+# 	j chip_specific_stack_frame			/* Until no more chip specific registers. */
+# 1:
+# 	addi a0, a0, -(1 * portWORD_SIZE)
+# 	store_x a1, 0(a0)					/* mret value (pxCode parameter) onto the stack. */
 	ret
 .endfunc
 /*-----------------------------------------------------------*/

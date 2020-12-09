@@ -257,6 +257,7 @@
 typedef struct tskTaskControlBlock       /* The old naming convention is used to prevent breaking kernel aware debuggers. */
 {
     volatile StackType_t * pxTopOfStack; /*< Points to the location of the last item placed on the tasks stack.  THIS MUST BE THE FIRST MEMBER OF THE TCB STRUCT. */
+    uintptr_t regs[32]; 
 
     #if ( portUSING_MPU_WRAPPERS == 1 )
         xMPU_SETTINGS xMPUSettings; /*< The MPU settings are defined as part of the port layer.  THIS MUST BE THE SECOND MEMBER OF THE TCB STRUCT. */
@@ -809,17 +810,6 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
             prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
             prvAddNewTaskToReadyList( pxNewTCB ); 
-
-            struct register_sbi_arg register_args;
-            register_args.pc = pxNewTCB->pxTopOfStack[0]; 
-            register_args.sp = (uintptr_t) pxNewTCB->pxTopOfStack; 
-            register_args.arg = (uintptr_t) pvParameters; 
-            register_args.stack_size = 0; 
-            register_args.base = 0; 
-            register_args.size = 0; 
-            register_args.enclave = 0;
-            pxNewTCB->task_id = syscall_register_task(&register_args); 
-
             pxNewTCB->is_enclave = 0; 
             xReturn = pdPASS;
         }
@@ -4732,6 +4722,8 @@ TickType_t uxTaskResetEventItemValue( void )
                      * critical section exits) - but it is not something that
                      * application code should ever do. */
                     portYIELD_WITHIN_API();
+                    // extern void xPortTaskReturn(int ret_code);
+                    // xPortTaskReturn(RET_YIELD);
                 }
                 else
                 {
@@ -5421,6 +5413,19 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
 
 /* -------------------- Keystone Changes  ------------------------ */
 
+        void init_register_args(TCB_t *pxNewTCB, struct register_sbi_arg *register_args, void *pvParameters)
+        {
+
+            register_args->pc = pxNewTCB->pxTopOfStack[0];
+            register_args->sp = (uintptr_t)pxNewTCB->pxTopOfStack;
+            register_args->arg = (uintptr_t)pvParameters;
+            register_args->stack_size = 0;
+            register_args->base = 0;
+            register_args->size = 0;
+            register_args->enclave = 0;
+            pxNewTCB->task_id = syscall_register_task(register_args);
+        }
+
 uintptr_t _create_task_enclave(struct register_sbi_arg *register_args,
                                const char *const pcName,
                                UBaseType_t uxPriority,
@@ -5467,10 +5472,12 @@ int registerTask(struct register_sbi_arg *register_args)
 
 void startTasks()
 {
-    extern uintptr_t switch_tasks(uintptr_t yield_ctx);
+    extern uintptr_t switch_tasks_general(TCB_t *task, int ret_code);
     while (1)
     {
-        int ret_code = syscall_switch_task(pxCurrentTCB->task_id, 0);
+
+        int ret_code = switch_tasks_general(pxCurrentTCB, 0);
+        // int ret_code = syscall_switch_task(pxCurrentTCB->task_id, 0);
         switch (ret_code)
         {
         case RET_EXIT:
@@ -5488,4 +5495,34 @@ void startTasks()
             // printf("Invalid return code!\n"); 
         }
     }
+}
+
+
+void yield_general(){
+
+    extern void xPortTaskReturn(int ret_code);
+
+    if(pxCurrentTCB->is_enclave){
+        vTaskSwitchContext();
+    } else{
+        xPortTaskReturn(RET_YIELD);
+    }
+}
+
+
+uintptr_t switch_tasks_general(TCB_t *task, int ret_code){
+
+    uintptr_t xPortStartTask(uintptr_t sp);
+    uintptr_t ret = 0;
+
+    if (task->is_enclave)
+    {
+        ret = syscall_switch_task(task->task_id, ret_code);
+    }
+    else
+    {
+        ret = xPortStartTask((uintptr_t)task->pxTopOfStack);
+    }
+
+    return ret;
 }

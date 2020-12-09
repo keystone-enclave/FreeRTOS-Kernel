@@ -92,12 +92,13 @@ not need to be guarded with a critical section. */
 
 
 /* Scheduler utilities. */
-extern void vTaskSwitchContext( void );
+extern void yield_general();
 // #define portYIELD() __asm volatile( "ecall" );
 
+
 #define portYIELD()                               		\
-{           											\
-		vTaskSwitchContext();							\
+{       												\
+		yield_general();								\
 }
 
 #define portEND_SWITCHING_ISR( xSwitchRequired ) if( xSwitchRequired ) vTaskSwitchContext()
