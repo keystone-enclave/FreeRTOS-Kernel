@@ -12,7 +12,7 @@
 #define Q_STATE Q_STATE_N *Q_STATE_N
 #define N_ACTION 4
 
-#define NUM_EPISODES 1
+#define NUM_EPISODES 1000
 #define STEPS_PER_EP 1000
 
 #define LEARN_RATE 0.5
@@ -24,6 +24,14 @@
 #define E_GREEDY 0.7
 #define E_GREEDY_F 0.01
 #define E_GREEDY_DECAY 0.99
+
+#define DRIVER_TID 2
+#define AGENT_TID 1
+
+#define RAND_MAX 2147483647
+#define QUEUE_MAX_DELAY 10000
+
+
 
 enum tile_state
 {
@@ -96,5 +104,15 @@ void step(struct probability_matrix_item *m_item, int action);
 void env_setup();
 void env_reset();
 void print_p_matrix();
+
+
+//Agent send functions
+void send_finish(QueueHandle_t queue);
+void send_env_reset(QueueHandle_t send_queue, QueueHandle_t recv_queue);
+void send_env_step(QueueHandle_t send_queue, QueueHandle_t recv_queue, struct probability_matrix_item *next, int action);
+
+long rand(); 
+double max(double *actions);
+int max_action(double *actions);
 
 #endif
