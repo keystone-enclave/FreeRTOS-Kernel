@@ -12,6 +12,7 @@
 #include <rl.h>
 
 #include "FreeRTOS_IO.h"
+#include "CLI_functions.h"
 #include "console.h"
 #include "commands.h"
 #include "devices.h"
@@ -131,6 +132,7 @@ int main( void )
 
    xTaskCreate(agent_task, "agent", configMINIMAL_STACK_SIZE * 6, NULL, 25, &agent);
    xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 21, &driver);
+   FreeRTOS_RegisterFunction( "taskTest2", taskTestFn2, 0 );
 #endif
 
    xTaskCreate(vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void *)uart, 1, &taskCLI);
