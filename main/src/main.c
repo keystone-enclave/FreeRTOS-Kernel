@@ -18,6 +18,7 @@
 
 #define HEAP_SIZE  0x800 
 // #define RL_TEST
+// #define ENCLAVE
 #define ENCLAVE_RL
 // #define TEST
 

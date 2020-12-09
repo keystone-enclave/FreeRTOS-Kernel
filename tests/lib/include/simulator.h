@@ -12,7 +12,7 @@
 #define Q_STATE Q_STATE_N *Q_STATE_N
 #define N_ACTION 4
 
-#define NUM_EPISODES 1
+#define NUM_EPISODES 1000
 #define STEPS_PER_EP 1000
 
 #define LEARN_RATE 0.5
