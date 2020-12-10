@@ -10,6 +10,7 @@
 #include <string.h>
 #include <queue.h>
 #include <rl.h>
+#include <timex.h>
 
 #include "FreeRTOS_IO.h"
 #include "CLI_functions.h"
@@ -18,9 +19,9 @@
 #include "devices.h"
 
 #define HEAP_SIZE  0x800 
-// #define RL_TEST
+#define RL_TEST
 // #define ENCLAVE
-#define ENCLAVE_RL
+// #define ENCLAVE_RL
 // #define TEST
 
 
@@ -72,6 +73,9 @@ extern void xPortTaskReturn(int ret_code);
 
 int main( void )
 {
+    cycles_t st = get_cycles();
+    cycles_t et = 0;
+    printf("Setup Start Time: %u\n", st);
    /* Register devices with the FreeRTOS+IO. */
 	vRegisterIODevices();
 
@@ -124,6 +128,7 @@ int main( void )
 
    xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, &enclave3);
    xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, &enclave4);
+//    xTaskCreate(taskPrintTaskTime, "Runtime", configMINIMAL_STACK_SIZE, (void *)&enclave3, 2, &taskRT);
 #endif
 
 #ifdef RL_TEST
@@ -141,7 +146,9 @@ int main( void )
    vRegisterCLICommands();
 
    /* Start the tasks and timer running. */
-   vTaskStartScheduler();
+    et = get_cycles();
+    printf("Setup End Time: %u\nDuration: %u\n", et, et - st);
+    vTaskStartScheduler();
 
    //Should not reach here!
 //    while (1)
@@ -150,6 +157,12 @@ int main( void )
 //    }
    return 1;
 }
+
+// static void taskPrintTaskTime(void *pvParameters) {
+//     if (pvParameters != NULL) {
+//         printf("Task Runtime: %u\n", ((TaskHandle_t) pvParameters)->ulRunTimeCounter);
+//     }
+// }
 
 #ifdef TEST
 
@@ -176,6 +189,7 @@ static void taskTestFn2(void *pvParameters){
    xQueueSend( xQueue, &send, 100000 );
    // xTaskNotifyGive( taskTest );
    printf("Untrusted Task 2 DONE\n");
+   printf("Task Runtime: %u\n", xTaskGetTickCount());
    xPortTaskReturn(RET_EXIT);
 }
 
@@ -184,6 +198,8 @@ static void taskTestFn2(void *pvParameters){
 
 #ifdef RL_TEST
 static void agent_task(void *pvParameters){
+    cycles_t st = get_cycles();
+    printf("Agent Start Time: %u\n", st);
     printf("Enter Agent\n");
     int action;
     int state;
@@ -258,6 +274,8 @@ static void agent_task(void *pvParameters){
     }
 
     send_finish(xDriverQueue);
+    cycles_t et = get_cycles();
+    printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
     xPortTaskReturn(RET_EXIT);
 }
 
