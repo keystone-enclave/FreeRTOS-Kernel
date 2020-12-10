@@ -27,12 +27,12 @@ install(TARGETS rtos_attest DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
 add_executable(rtos_agent agent/agent.c ${LIB_SOURCE_FILES})
 set_target_properties(rtos_agent PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
-set_target_properties(rtos_agent PROPERTIES COMPILE_FLAGS "-Wall -O0 -Werror -fPIC -fno-builtin -g -std=c11 -fcommon -fno-zero-initialized-in-bss")
+set_target_properties(rtos_agent PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -std=c11 -fcommon -fno-zero-initialized-in-bss")
 install(TARGETS rtos_agent DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
 add_executable(rtos_simulator simulator/simulator.c ${LIB_SOURCE_FILES})
 set_target_properties(rtos_simulator PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
-set_target_properties(rtos_simulator PROPERTIES COMPILE_FLAGS "-Wall -O0 -Werror -fPIC -fno-builtin -g -std=c11 -fcommon -fno-zero-initialized-in-bss")
+set_target_properties(rtos_simulator PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -std=c11 -fcommon -fno-zero-initialized-in-bss")
 install(TARGETS rtos_simulator DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
 set(LINK_FILES_PATH ${EXECUTABLE_OUTPUT_PATH}/tests/src)

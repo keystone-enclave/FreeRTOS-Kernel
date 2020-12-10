@@ -6,6 +6,7 @@
 #include "printf.h"
 #include "eapp_utils.h"
 
+// #define DRIVER_TID 0
 #define DRIVER_TID 2
 
 #define RAND_MAX 2147483647
@@ -105,8 +106,6 @@ void send_env_step(struct probability_matrix_item *next, int action){
     next->ctx.done = args.next.ctx.done;
     next->ctx.new_state = args.next.ctx.new_state;
     next->ctx.reward = args.next.ctx.reward;
-
-    
 
 }
 

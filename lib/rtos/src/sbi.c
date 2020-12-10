@@ -29,3 +29,12 @@ void
 sbi_disable_interrupts(){
   //  SBI_CALL_1(SBI_ENABLE_INTERRUPT, 0); 
 }
+
+int sbi_send(int task_id, void *msg, int size){
+    return SBI_CALL_3(SBI_SEND_TASK, task_id, msg, size);
+}
+
+
+int sbi_recv(int task_id, void *msg, int size){
+    return SBI_CALL_3(SBI_RECV_TASK, task_id, msg, size);
+}

@@ -7,6 +7,7 @@ struct probability_matrix_item probability_matrix[Q_STATE_N * Q_STATE_N][N_ACTIO
 int curr_state = 0;
 int last_action = NO_ACTION;
 
+// #define AGENT_TID 0
 #define AGENT_TID 1
 
 void init_helper_1(int *grid_row, int filter)

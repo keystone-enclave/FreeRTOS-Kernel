@@ -16,6 +16,9 @@
 #define SBI_SM_RESUME_ENCLAVE    107
 #define SBI_SM_RANDOM            108
 
+#define SBI_SEND_TASK      204
+#define SBI_RECV_TASK      205
+
 #define SBI_SM_EXIT_ENCLAVE     1101
 #define SBI_SM_CALL_PLUGIN      1000
 #define SBI_SM_NOT_IMPLEMENTED  1111
@@ -63,5 +66,8 @@ void handle_timer_interrupt();
 
 void ENABLE_INTERRUPTS(void);
 void DISABLE_INTERRUPTS(void); 
+
+int sbi_recv(int task_id, void *msg, int size);
+int sbi_send(int task_id, void *msg, int size);
 
 #endif

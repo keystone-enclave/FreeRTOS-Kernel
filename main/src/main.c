@@ -19,11 +19,12 @@
 #include "devices.h"
 
 #define HEAP_SIZE  0x800 
-#define RL_TEST
+// #define RL_TEST
 // #define ENCLAVE
-// #define ENCLAVE_RL
+#define ENCLAVE_RL
 // #define TEST
-
+// #define RTOS_AGENT_RL_TEST
+// #define RTOS_DRIVER_RL_TEST
 
 extern uintptr_t __stack_top;
 extern uintptr_t __heap_base; 
@@ -62,6 +63,20 @@ TaskHandle_t taskCLI = 0;
 #ifdef ENCLAVE_RL
     TaskHandle_t enclave3 = 0; 
     TaskHandle_t enclave4 = 0; 
+#endif
+
+
+
+#ifdef RTOS_AGENT_RL_TEST
+    TaskHandle_t agent;
+    TaskHandle_t enclave4; 
+    static void agent_task(void *pvParameters);
+#endif
+
+#ifdef RTOS_DRIVER_RL_TEST
+    TaskHandle_t driver = 0;
+    TaskHandle_t enclave3 = 0; 
+    static void driver_task(void *pvParameters);
 #endif
 
 Peripheral_Descriptor_t uart = 0;
@@ -129,6 +144,32 @@ int main( void )
    xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, &enclave3);
    xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, &enclave4);
 //    xTaskCreate(taskPrintTaskTime, "Runtime", configMINIMAL_STACK_SIZE, (void *)&enclave3, 2, &taskRT);
+#endif
+
+#ifdef RTOS_AGENT_RL_TEST
+#define EAPP_DRIVER_TID 1
+   extern char *_simulator_start;
+   extern char *_simulator_end;
+
+   size_t elf_size_4 = (char *)&_simulator_end - (char *)&_simulator_start;
+
+   printf("Simulator at 0x%p-0x%p!\n", &_simulator_start, &_simulator_end);
+
+   xTaskCreate(agent_task, "agent", configMINIMAL_STACK_SIZE * 6, NULL, 30, &agent);
+   xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, &enclave4);
+#endif
+
+#ifdef RTOS_DRIVER_RL_TEST
+#define EAPP_AGENT_TID 1
+   extern char *_agent_start;
+   extern char *_agent_end;
+
+   size_t elf_size_3 = (char *)&_agent_end - (char *)&_agent_start;
+
+   printf("Agent at 0x%p-0x%p!\n", &_agent_start, &_agent_end);
+
+   xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, &enclave3);
+   xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 30, &driver);
 #endif
 
 #ifdef RL_TEST
@@ -297,6 +338,151 @@ static void driver_task(void *pvParameters){
          case STEP:
                step(&args->next, args->action);
                xQueueSend(xAgentQueue, &args, QUEUE_MAX_DELAY);               
+               break;
+         case FINISH:
+               goto done;
+               break;
+         default:
+               printf("Invalid message type!\n");
+               break;
+      }
+    }
+
+done:
+    xPortTaskReturn(RET_EXIT);
+}
+#endif
+
+#ifdef RTOS_AGENT_RL_TEST
+void eapp_send_finish(){
+    struct send_action_args args;
+    args.msg_type = FINISH;
+    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args));
+}
+
+void eapp_send_env_reset(){
+    struct send_action_args args;
+    args.msg_type = RESET;
+    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args));
+    while(sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args)));
+}
+
+void eapp_send_env_step(struct probability_matrix_item *next, int action){
+
+    struct send_action_args args;
+    args.action = action;
+    args.msg_type = STEP;
+
+    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args)); 
+
+    while(sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args)));
+
+    next->ctx.done = args.next.ctx.done;
+    next->ctx.new_state = args.next.ctx.new_state;
+    next->ctx.reward = args.next.ctx.reward;
+
+}
+static void agent_task(void *pvParameters){
+    cycles_t st = get_cycles();
+    printf("Agent Start Time: %u\n", st);
+    printf("Enter Agent\n");
+    int action;
+    int state;
+    int new_state;
+    int reward;
+    int done;
+    int rewards_current_episode = 0;
+    struct probability_matrix_item next;
+    double q_table[Q_STATE][N_ACTION] = {0};
+    double e_greedy = E_GREEDY;
+
+    int i, j;
+    for (i = 0; i < NUM_EPISODES; i++)
+    {
+
+        done = FALSE;
+        rewards_current_episode = 0;
+        state = 0;
+
+        eapp_send_env_reset();
+
+        for (j = 0; j < STEPS_PER_EP; j++)
+        {
+
+            float random_f = (float)rand() / (float)(RAND_MAX / 1.0);
+
+            if (random_f > e_greedy)
+            {
+                action = max_action(q_table[state]);
+            }
+            else
+            {
+                action = rand() % 4;
+            }
+
+            eapp_send_env_step(&next, action);
+
+
+            new_state = next.ctx.new_state;
+            reward = next.ctx.reward;
+            done = next.ctx.done;
+
+            q_table[state][action] = q_table[state][action] * (1.0 - LEARN_RATE) + LEARN_RATE * (reward + DISCOUNT * max(q_table[new_state]));
+
+            state = new_state;
+            rewards_current_episode += reward;
+
+            if (done == TRUE)
+            {
+
+                if (reward == 1)
+                {
+                    if (e_greedy > E_GREEDY_F)
+                    e_greedy *= E_GREEDY_DECAY;
+#ifdef DEBUG
+                    printf("You reached the goal!\n");
+#endif
+                }
+                else
+                {
+#ifdef DEBUG
+                    printf("You fell in a hole!\n");
+#endif
+                }
+                break;
+            }
+        }
+        if (i % 10 == 0)
+        {
+            printf("Episode: %d, Steps taken: %d, Reward: %d\n", i, j, rewards_current_episode);
+        }
+    }
+
+    eapp_send_finish();
+    cycles_t et = get_cycles();
+    printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
+    xPortTaskReturn(RET_EXIT);
+}
+#endif
+
+#ifdef RTOS_DRIVER_RL_TEST
+static void driver_task(void *pvParameters){
+    printf("Enter Simulator\n");
+    env_setup();
+    struct send_action_args *args;
+
+    while(1){
+
+        while(sbi_recv(EAPP_AGENT_TID, &args, sizeof(struct send_action_args)));
+        
+      switch(args->msg_type){
+         case RESET:
+               env_reset();
+                sbi_send(EAPP_AGENT_TID, &args, sizeof(struct send_action_args));
+               break;
+         case STEP:
+               step(&args->next, args->action);
+                sbi_send(EAPP_AGENT_TID, &args, sizeof(struct send_action_args));           
                break;
          case FINISH:
                goto done;
