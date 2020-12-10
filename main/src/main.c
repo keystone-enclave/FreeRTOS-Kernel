@@ -160,7 +160,7 @@ static void taskTestFn1(void *pvParameters){
 
    // xTaskNotifyGive(taskTest2);
 
-   // ulTaskNotifyTake( pdTRUE, 100000 );
+   ulTaskNotifyTake( pdTRUE, 100000 );
    xQueueReceive( xQueue, &x, 100000 );
 
    printf("[Receiver]: %d\n", x);

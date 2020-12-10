@@ -16,6 +16,7 @@
 #define RET_EXIT 0 
 #define RET_YIELD 1
 #define RET_TIMER 2
+#define RET_RECV_WAIT 3 
 
 struct task_ctx {
 	struct regs regs;
