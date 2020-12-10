@@ -1,4 +1,7 @@
 
+#include <stdint.h>
+#include <timex.h>
+
 #include "simulator.h"
 #include "printf.h"
 #include "eapp_utils.h"
@@ -109,6 +112,8 @@ void send_env_step(struct probability_matrix_item *next, int action){
 
 void EAPP_ENTRY eapp_entry()
 {
+    cycles_t st = get_cycles();
+    printf("Agent Start Time: %u\n", st);
     printf("Enter Agent\n");
     int action;
     int state;
@@ -183,5 +188,7 @@ void EAPP_ENTRY eapp_entry()
     }
 
     send_finish();
+    cycles_t et = get_cycles();
+    printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
     syscall_task_return();
 }
