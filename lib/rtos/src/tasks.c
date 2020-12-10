@@ -5490,6 +5490,9 @@ void startTasks()
         case RET_TIMER:
             vTaskSwitchContext();
             break;
+        case RET_RECV_WAIT:
+            vTaskSwitchContext();
+            break;
         default:
             break;
             // printf("Invalid return code!\n"); 
