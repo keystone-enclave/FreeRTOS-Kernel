@@ -1,7 +1,7 @@
 project(rtos C ASM)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T firmware/rtos.lds")
 
-set(CFLAGS      "-Wall -O0 -Werror -fPIC -fno-builtin -std=c11 -g -march=rv32imafd -mabi=ilp32d")
+set(CFLAGS      "-Wall -O3 -Werror -fPIC -fno-builtin -std=c11 -g -march=rv32imafd -mabi=ilp32d")
 set(LDFLAGS     "-static -nostdlib $(shell $(CC) --print-file-name=libgcc.a)")
 
 file(GLOB SOURCE_FILES "src/*.c")

@@ -122,7 +122,7 @@ target_compile_definitions(${EXECUTABLE} PUBLIC -DportasmHANDLE_INTERRUPT=interr
 
 set_property(TARGET ${EXECUTABLE} PROPERTY LINK_FLAGS ${LIBGCC})
 set_target_properties(${EXECUTABLE} PROPERTIES LINK_FLAGS "-T ${rtos_src}/firmware/rtos.lds")
-set_target_properties(${EXECUTABLE} PROPERTIES COMPILE_FLAGS "-Wall -O0 -Werror -fPIC -fno-builtin -std=c11 -g -march=rv32imafd -mabi=ilp32d -fno-zero-initialized-in-bss")
+set_target_properties(${EXECUTABLE} PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -std=c11 -g -march=rv32imafd -mabi=ilp32d -fno-zero-initialized-in-bss")
 
 install(TARGETS ${EXECUTABLE} DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
