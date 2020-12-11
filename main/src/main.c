@@ -19,12 +19,19 @@
 #include "devices.h"
 
 #define HEAP_SIZE  0x800 
-#define RL_TEST
+
+/* *** Configurations  *** */
+
+/* Enables all tasks to be switched via the SM*/
+#define TASK_REGISTER_ALL
+
+#define RL_TASK_TEST
 // #define ENCLAVE
 // #define ENCLAVE_RL
 // #define TEST
 // #define RTOS_AGENT_RL_TEST
 // #define RTOS_DRIVER_RL_TEST
+
 
 extern uintptr_t __stack_top;
 extern uintptr_t __heap_base; 
@@ -42,7 +49,7 @@ uint8_t ucHeap[ configTOTAL_HEAP_SIZE * 4 ] = {0};
 
 QueueHandle_t xQueue = 0;
 
-#ifdef RL_TEST
+#ifdef RL_TASK_TEST
     TaskHandle_t agent = 0; 
     TaskHandle_t driver = 0;
 
@@ -55,10 +62,6 @@ QueueHandle_t xQueue = 0;
 
 TaskHandle_t taskCLI = 0;
 
-/* *** Configurations  *** */
-
-/* Enables all tasks to be switched via the SM*/
-#define TASK_REGISTER_ALL
 
 
 #ifdef ENCLAVE
@@ -178,7 +181,7 @@ int main( void )
    xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 30, &driver);
 #endif
 
-#ifdef RL_TEST
+#ifdef RL_TASK_TEST
    xAgentQueue = xQueueCreate(10, sizeof(uintptr_t));
    xDriverQueue = xQueueCreate(10, sizeof(uintptr_t));
 
@@ -243,7 +246,7 @@ static void taskTestFn2(void *pvParameters){
 #endif
 
 
-#ifdef RL_TEST
+#ifdef RL_TASK_TEST
 static void agent_task(void *pvParameters){
     cycles_t st = get_cycles();
     printf("Agent Start Time: %u\n", st);
