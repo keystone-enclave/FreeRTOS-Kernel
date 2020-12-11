@@ -3048,6 +3048,8 @@ void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut ) PRIVILEGED_FUNC
 
 /* --- KEYSTONE CHANGES ---*/
 void startTasks();
+void return_general();
+void yield_general();
 int registerTask(struct register_sbi_arg *register_args);
 uintptr_t _create_task_enclave(struct register_sbi_arg *register_args,
                             const char * const pcName, 

@@ -111,9 +111,6 @@ void send_env_step(QueueHandle_t send_queue, QueueHandle_t recv_queue, struct pr
     xQueueSend(send_queue, &args, QUEUE_MAX_DELAY);
     xQueueReceive(recv_queue, &args, QUEUE_MAX_DELAY);
 
-    // sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args)); 
-    // while(sbi_recv(DRIVER_TID, &args, sizeof(struct send_action_args)));
-
     next->ctx.done = args->next.ctx.done;
     next->ctx.new_state = args->next.ctx.new_state;
     next->ctx.reward = args->next.ctx.reward;

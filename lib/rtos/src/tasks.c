@@ -41,6 +41,8 @@
 #include "regs.h"
 #include "syscall.h"
 
+#define TASK_REGISTER_ALL
+
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
  * for the header files above, but not in this file, in order to generate the
@@ -810,6 +812,13 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
             prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
             prvAddNewTaskToReadyList( pxNewTCB ); 
+
+            #ifdef TASK_REGISTER_ALL
+                void init_register_args(TCB_t *pxNewTCB, struct register_sbi_arg *register_args, void *pvParameters);
+                struct register_sbi_arg register_args;
+                init_register_args(pxNewTCB, &register_args, pvParameters);
+            #endif 
+
             pxNewTCB->is_enclave = 0; 
             xReturn = pdPASS;
         }
@@ -1248,7 +1257,11 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
             if( pxTCB == pxCurrentTCB )
             {
                 configASSERT( uxSchedulerSuspended == 0 );
+                #ifdef TASK_REGISTER_ALL
+                vTaskSwitchContext();
+                #else
                 portYIELD_WITHIN_API();
+                #endif
             }
             else
             {
@@ -5476,7 +5489,7 @@ void startTasks()
     while (1)
     {
 
-        int ret_code = switch_tasks_general(pxCurrentTCB, 0);
+        int ret_code = switch_tasks_general(pxCurrentTCB, -1);
         // int ret_code = syscall_switch_task(pxCurrentTCB->task_id, 0);
         switch (ret_code)
         {
@@ -5500,24 +5513,45 @@ void startTasks()
     }
 }
 
+void return_general()
+{
+#ifdef TASK_REGISTER_ALL
+    syscall_switch_task(0, RET_EXIT);
+#else
+    extern void xPortTaskReturn(int ret_code);
+    if (pxCurrentTCB->is_enclave)
+    {
+        vTaskSwitchContext();
+    }
+    else
+    {
+        xPortTaskReturn(RET_EXIT);
+    }
+#endif
+}
 
 void yield_general(){
 
+    #ifdef TASK_REGISTER_ALL
+        syscall_switch_task(0, RET_YIELD);
+    #else
     extern void xPortTaskReturn(int ret_code);
-
     if(pxCurrentTCB->is_enclave){
         vTaskSwitchContext();
     } else{
         xPortTaskReturn(RET_YIELD);
     }
+    #endif
 }
 
 
 uintptr_t switch_tasks_general(TCB_t *task, int ret_code){
-
-    uintptr_t xPortStartTask(uintptr_t sp);
     uintptr_t ret = 0;
 
+#ifdef TASK_REGISTER_ALL
+    ret = syscall_switch_task(task->task_id, ret_code);
+#else
+    uintptr_t xPortStartTask(uintptr_t sp);
     if (task->is_enclave)
     {
         ret = syscall_switch_task(task->task_id, ret_code);
@@ -5526,6 +5560,7 @@ uintptr_t switch_tasks_general(TCB_t *task, int ret_code){
     {
         ret = xPortStartTask((uintptr_t)task->pxTopOfStack);
     }
+#endif
 
     return ret;
 }

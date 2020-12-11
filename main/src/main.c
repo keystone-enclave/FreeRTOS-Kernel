@@ -19,11 +19,11 @@
 #include "devices.h"
 
 #define HEAP_SIZE  0x800 
-// #define RL_TEST
+#define RL_TEST
 // #define ENCLAVE
 // #define ENCLAVE_RL
 // #define TEST
-#define RTOS_AGENT_RL_TEST
+// #define RTOS_AGENT_RL_TEST
 // #define RTOS_DRIVER_RL_TEST
 
 extern uintptr_t __stack_top;
@@ -54,6 +54,12 @@ QueueHandle_t xQueue = 0;
 #endif
 
 TaskHandle_t taskCLI = 0;
+
+/* *** Configurations  *** */
+
+/* Enables all tasks to be switched via the SM*/
+#define TASK_REGISTER_ALL
+
 
 #ifdef ENCLAVE
     TaskHandle_t enclave1 = 0; 
@@ -317,7 +323,7 @@ static void agent_task(void *pvParameters){
     send_finish(xDriverQueue);
     cycles_t et = get_cycles();
     printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
-    xPortTaskReturn(RET_EXIT);
+    return_general();
 }
 
 
@@ -343,13 +349,13 @@ static void driver_task(void *pvParameters){
                goto done;
                break;
          default:
-               printf("Invalid message type!\n");
+            //    printf("Invalid message type!\n");
                break;
       }
     }
 
 done:
-    xPortTaskReturn(RET_EXIT);
+    return_general();
 }
 #endif
 
