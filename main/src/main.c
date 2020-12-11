@@ -23,11 +23,11 @@
 /* *** Configurations  *** */
 
 /* Enables all tasks to be switched via the SM*/
-#define TASK_REGISTER_ALL
+// #define TASK_REGISTER_ALL
 
-#define RL_TASK_TEST
+// #define RL_TASK_TEST
 // #define ENCLAVE
-// #define ENCLAVE_RL
+#define ENCLAVE_RL
 // #define TEST
 // #define RTOS_AGENT_RL_TEST
 // #define RTOS_DRIVER_RL_TEST
