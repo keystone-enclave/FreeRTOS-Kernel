@@ -17,12 +17,12 @@ file(GLOB LIB_SOURCE_FILES "lib/src/*")
 
 add_executable(rtos_fibonacci fibonacci/fibonacci.c ${LIB_SOURCE_FILES})
 set_target_properties(rtos_fibonacci PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
-set_target_properties(rtos_fibonacci PROPERTIES COMPILE_FLAGS "-Wall -O0 -Werror -fPIC -fno-builtin -g -std=c11 -fcommon -fno-zero-initialized-in-bss")
+set_target_properties(rtos_fibonacci PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -std=c11 -fcommon -fno-zero-initialized-in-bss")
 install(TARGETS rtos_fibonacci DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
 add_executable(rtos_attest attest/attest.c ${LIB_SOURCE_FILES})
 set_target_properties(rtos_attest PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
-set_target_properties(rtos_attest PROPERTIES COMPILE_FLAGS "-Wall -O0 -Werror -fPIC -fno-builtin -g -std=c11 -fcommon -fno-zero-initialized-in-bss")
+set_target_properties(rtos_attest PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -std=c11 -fcommon -fno-zero-initialized-in-bss")
 install(TARGETS rtos_attest DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
 add_executable(rtos_agent agent/agent.c ${LIB_SOURCE_FILES})
