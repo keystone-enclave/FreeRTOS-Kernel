@@ -83,14 +83,14 @@ void print_q_table()
 void send_finish(){
     struct send_action_args args;
     args.msg_type = FINISH;
-    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args));
+    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 }
 
 void send_env_reset(){
     struct send_action_args args;
     args.msg_type = RESET;
-    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args));
-    while(sbi_recv(DRIVER_TID, &args, sizeof(struct send_action_args)));
+    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+    while(sbi_recv(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD));
 }
 
 void send_env_step(struct probability_matrix_item *next, int action){
@@ -99,9 +99,9 @@ void send_env_step(struct probability_matrix_item *next, int action){
     args.action = action;
     args.msg_type = STEP;
 
-    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args)); 
+    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD); 
 
-    while(sbi_recv(DRIVER_TID, &args, sizeof(struct send_action_args)));
+    while(sbi_recv(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD));
 
     next->ctx.done = args.next.ctx.done;
     next->ctx.new_state = args.next.ctx.new_state;

@@ -22,11 +22,11 @@ void syscall_task_return(){
     SBI_CALL_2(SBI_SWITCH_TASK, 0, RET_EXIT);
 }
 
-int sbi_send(int task_id, void *msg, int size){
-    return SBI_CALL_3(SBI_SEND_TASK, task_id, msg, size);
+int sbi_send(int task_id, void *msg, int size, uintptr_t yield){
+    return SBI_CALL_4(SBI_SEND_TASK, task_id, msg, size, yield);
 }
 
 
-int sbi_recv(int task_id, void *msg, int size){
-    return SBI_CALL_3(SBI_RECV_TASK, task_id, msg, size);
+int sbi_recv(int task_id, void *msg, int size, uintptr_t yield){
+    return SBI_CALL_4(SBI_RECV_TASK, task_id, msg, size, yield);
 }

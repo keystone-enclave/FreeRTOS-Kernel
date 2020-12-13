@@ -5487,7 +5487,7 @@ void startTasks()
     while (1)
     {
 
-        int ret_code = switch_tasks_general(pxCurrentTCB, 0);
+        int ret_code = switch_tasks_general(pxCurrentTCB, -1);
         // int ret_code = syscall_switch_task(pxCurrentTCB->task_id, 0);
         switch (ret_code)
         {

@@ -7,8 +7,8 @@ struct probability_matrix_item probability_matrix[Q_STATE_N * Q_STATE_N][N_ACTIO
 int curr_state = 0;
 int last_action = NO_ACTION;
 
-// #define AGENT_TID 0
-#define AGENT_TID 1
+#define AGENT_TID 0
+// #define AGENT_TID 1
 
 void init_helper_1(int *grid_row, int filter)
 {
@@ -323,19 +323,16 @@ void EAPP_ENTRY eapp_entry(){
 
     while(1){
 
-        while(sbi_recv(AGENT_TID, &args, sizeof(struct send_action_args)));
+        while(sbi_recv(AGENT_TID, &args, sizeof(struct send_action_args), YIELD));
         
-        // printf("args.msg_type: %d\n", args.msg_type);
         switch(args.msg_type){
             case RESET:
-                // printf("Before reset\n");
                 env_reset();
-                // printf("done reset\n");
-                sbi_send(AGENT_TID, &args, sizeof(struct send_action_args));
+                sbi_send(AGENT_TID, &args, sizeof(struct send_action_args), YIELD);
                 break;
             case STEP:
                 step(&args.next, args.action);
-                sbi_send(AGENT_TID, &args, sizeof(struct send_action_args)); 
+                sbi_send(AGENT_TID, &args, sizeof(struct send_action_args), YIELD); 
                 break;
             case FINISH:
                 goto done;

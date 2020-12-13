@@ -27,9 +27,9 @@
 
 // #define RL_TASK_TEST
 // #define ENCLAVE
-#define ENCLAVE_RL
+// #define ENCLAVE_RL
 // #define TEST
-// #define RTOS_AGENT_RL_TEST
+#define RTOS_AGENT_RL_TEST
 // #define RTOS_DRIVER_RL_TEST
 
 
@@ -366,28 +366,33 @@ done:
 void eapp_send_finish(){
     struct send_action_args args;
     args.msg_type = FINISH;
-    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args));
+    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 }
 
 void eapp_send_env_reset(){
+
     struct send_action_args args;
     args.msg_type = RESET;
-    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args));
-    while(sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args))){
+    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+
+    int recv_msg = sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+
+
+    while(recv_msg) {
         xPortTaskReturn(RET_YIELD);
+        recv_msg = sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
     }
         
 }
 
 void eapp_send_env_step(struct probability_matrix_item *next, int action){
-
     struct send_action_args args;
     args.action = action;
     args.msg_type = STEP;
 
-    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args)); 
+    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD); 
 
-    while(sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args))){
+    while(sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD)){
         xPortTaskReturn(RET_YIELD);
     }
 
