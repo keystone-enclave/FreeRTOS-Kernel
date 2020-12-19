@@ -320,15 +320,6 @@ void step(struct probability_matrix_item *m_item, int action)
 void EAPP_ENTRY eapp_entry(int AGENT_TID){
     printf("Enter Simulator\n");
 
-
-    for(int i = 0; i < 1000; i++){
-        syscall_task_yield();
-    }
-
-    printf("Simulator End\n");
-
-    syscall_task_return();
-
     env_setup();
     struct send_action_args args;
     struct probability_matrix_item p_item;

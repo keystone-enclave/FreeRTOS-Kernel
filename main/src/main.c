@@ -18,7 +18,7 @@
 #include "commands.h"
 #include "devices.h"
 
-#define HEAP_SIZE  0x800 
+#define HEAP_SIZE 0x800
 
 /* *** Configurations  *** */
 
@@ -32,237 +32,221 @@
 // #define RTOS_AGENT_RL_TEST
 // #define RTOS_DRIVER_RL_TEST
 
-
 extern uintptr_t __stack_top;
-extern uintptr_t __heap_base; 
-extern void freertos_risc_v_trap_handler(void); 
+extern uintptr_t __heap_base;
+extern void freertos_risc_v_trap_handler(void);
 
-uint8_t ucHeap[ configTOTAL_HEAP_SIZE * 4 ] = {0};
+uint8_t ucHeap[configTOTAL_HEAP_SIZE * 4] = {0};
 
 #ifdef TEST
-    TaskHandle_t taskTest1 = 0; 
-    TaskHandle_t taskTest2 = 0;
+TaskHandle_t taskTest1 = 0;
+TaskHandle_t taskTest2 = 0;
 
-    static void taskTestFn1(void *pvParameters); 
-    static void taskTestFn2(void *pvParameters);
+static void taskTestFn1(void *pvParameters);
+static void taskTestFn2(void *pvParameters);
 #endif
 
 QueueHandle_t xQueue = 0;
 
 #ifdef RL_TASK_TEST
-    TaskHandle_t agent = 0; 
-    TaskHandle_t driver = 0;
+TaskHandle_t agent = 0;
+TaskHandle_t driver = 0;
 
-    QueueHandle_t xAgentQueue = 0;
-    QueueHandle_t xDriverQueue = 0;
+QueueHandle_t xAgentQueue = 0;
+QueueHandle_t xDriverQueue = 0;
 
-    static void agent_task(void *pvParameters);
-    static void driver_task(void *pvParameters);
+static void agent_task(void *pvParameters);
+static void driver_task(void *pvParameters);
 #endif
 
 TaskHandle_t taskCLI = 0;
 
-
-
 #ifdef ENCLAVE
-    TaskHandle_t enclave1 = 0; 
-    TaskHandle_t enclave2 = 0; 
+TaskHandle_t enclave1 = 0;
+TaskHandle_t enclave2 = 0;
 #endif
 
 #ifdef ENCLAVE_RL
-    TaskHandle_t enclave3 = 0; 
-    TaskHandle_t enclave4 = 0; 
+TaskHandle_t enclave3 = 0;
+TaskHandle_t enclave4 = 0;
 #endif
 
-
-
 #ifdef RTOS_AGENT_RL_TEST
-    TaskHandle_t agent;
-    TaskHandle_t enclave4; 
-    static void agent_task(void *pvParameters);
+TaskHandle_t agent;
+TaskHandle_t enclave4;
+static void agent_task(void *pvParameters);
 #endif
 
 #ifdef RTOS_DRIVER_RL_TEST
-    TaskHandle_t driver = 0;
-    TaskHandle_t enclave3 = 0; 
-    static void driver_task(void *pvParameters);
+TaskHandle_t driver = 0;
+TaskHandle_t enclave3 = 0;
+static void driver_task(void *pvParameters);
 #endif
 
 Peripheral_Descriptor_t uart = 0;
 
-
 extern void xPortTaskReturn(int ret_code);
 
-
-
-int main( void )
+int main(void)
 {
     cycles_t st = get_cycles();
     cycles_t et = 0;
     printf("Setup Start Time: %u\n", st);
-   /* Register devices with the FreeRTOS+IO. */
-	vRegisterIODevices();
+    /* Register devices with the FreeRTOS+IO. */
+    vRegisterIODevices();
 
-   xQueue = xQueueCreate(10, sizeof(uintptr_t));
+    xQueue = xQueueCreate(10, sizeof(uintptr_t));
 
-   uart = FreeRTOS_open("/dev/uart", 0);
+    uart = FreeRTOS_open("/dev/uart", 0);
 
-   printf("UART: %p\n", uart);
+    printf("UART: %p\n", uart);
 
-   extern uintptr_t _rtos_base; 
-   extern uintptr_t _rtos_end; 
-    #ifdef RTOS_DEBUG
-    printf("Free RTOS booted at 0x%p-0x%p!\n", &_rtos_base, &_rtos_end); 
-    #endif 
+    extern uintptr_t _rtos_base;
+    extern uintptr_t _rtos_end;
+#ifdef RTOS_DEBUG
+    printf("Free RTOS booted at 0x%p-0x%p!\n", &_rtos_base, &_rtos_end);
+#endif
 
 #ifdef TEST
-   xTaskCreate(taskTestFn1, "task1", configMINIMAL_STACK_SIZE, (void *)5, 25, &taskTest1);
-   xTaskCreate(taskTestFn2, "task2", configMINIMAL_STACK_SIZE, NULL, 28, &taskTest2);
+    xTaskCreate(taskTestFn1, "task1", configMINIMAL_STACK_SIZE, (void *)5, 25, &taskTest1);
+    xTaskCreate(taskTestFn2, "task2", configMINIMAL_STACK_SIZE, NULL, 28, &taskTest2);
 #endif
 
 #ifdef ENCLAVE
-   extern char *_task_1_start;
-   extern char *_task_1_end;
+    extern char *_task_1_start;
+    extern char *_task_1_end;
 
-   extern char *_task_2_start;
-   extern char *_task_2_end;
+    extern char *_task_2_start;
+    extern char *_task_2_end;
 
-   size_t elf_size_1 = (char *)&_task_1_end - (char *)&_task_1_start;
-   size_t elf_size_2 = (char *)&_task_2_end - (char *)&_task_2_start;
+    size_t elf_size_1 = (char *)&_task_1_end - (char *)&_task_1_start;
+    size_t elf_size_2 = (char *)&_task_2_end - (char *)&_task_2_start;
 
-   printf("Enclave 1 at 0x%p-0x%p!\n", &_task_1_start, &_task_1_end);
-   printf("Enclave 2 at 0x%p-0x%p!\n", &_task_2_start, &_task_2_end);
+    printf("Enclave 1 at 0x%p-0x%p!\n", &_task_1_start, &_task_1_end);
+    printf("Enclave 2 at 0x%p-0x%p!\n", &_task_2_start, &_task_2_end);
 
-   xTaskCreateEnclave((uintptr_t)&_task_1_start, elf_size_1, "fibonacci", 30, &enclave1);
-   xTaskCreateEnclave((uintptr_t)&_task_2_start, elf_size_2, "attest", 30, &enclave2);
+    xTaskCreateEnclave((uintptr_t)&_task_1_start, elf_size_1, "fibonacci", 30, &enclave1);
+    xTaskCreateEnclave((uintptr_t)&_task_2_start, elf_size_2, "attest", 30, &enclave2);
 
 #endif
 
 #ifdef ENCLAVE_RL
-    #define DRIVER_TID 2
-    #define AGENT_TID 1
+#define DRIVER_TID 2
+#define AGENT_TID 1
 
     printf("Running Agent Enclave and Driver Enclave Test...\n");
 
-   extern char *_agent_start;
-   extern char *_agent_end;
+    extern char *_agent_start;
+    extern char *_agent_end;
 
-   extern char *_simulator_start;
-   extern char *_simulator_end;
+    extern char *_simulator_start;
+    extern char *_simulator_end;
 
-   size_t elf_size_3 = (char *)&_agent_end - (char *)&_agent_start;
-   size_t elf_size_4 = (char *)&_simulator_end - (char *)&_simulator_start;
+    size_t elf_size_3 = (char *)&_agent_end - (char *)&_agent_start;
+    size_t elf_size_4 = (char *)&_simulator_end - (char *)&_simulator_start;
 
 #ifdef RTOS_DEBUG
-   printf("Agent at 0x%p-0x%p!\n", &_agent_start, &_agent_end);
-   printf("Simulator at 0x%p-0x%p!\n", &_simulator_start, &_simulator_end);
+    printf("Agent at 0x%p-0x%p!\n", &_agent_start, &_agent_end);
+    printf("Simulator at 0x%p-0x%p!\n", &_simulator_start, &_simulator_end);
 #endif
 
-   xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, (void * const) DRIVER_TID, &enclave3);
-   xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, (void * const) AGENT_TID, &enclave4);
+    xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, (void *const)DRIVER_TID, &enclave3);
+    xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, (void *const)AGENT_TID, &enclave4);
 #endif
 
 #ifdef RTOS_AGENT_RL_TEST
 #define EAPP_DRIVER_TID 1
-   extern char *_simulator_start;
-   extern char *_simulator_end;
+    extern char *_simulator_start;
+    extern char *_simulator_end;
 
-   size_t elf_size_4 = (char *)&_simulator_end - (char *)&_simulator_start;
+    size_t elf_size_4 = (char *)&_simulator_end - (char *)&_simulator_start;
 
-   printf("Simulator at 0x%p-0x%p!\n", &_simulator_start, &_simulator_end);
+    printf("Simulator at 0x%p-0x%p!\n", &_simulator_start, &_simulator_end);
 
-   xTaskCreate(agent_task, "agent", configMINIMAL_STACK_SIZE * 6, NULL, 30, &agent);
-   xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, &enclave4);
+    xTaskCreate(agent_task, "agent", configMINIMAL_STACK_SIZE * 6, NULL, 30, &agent);
+    xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, &enclave4);
 #endif
 
 #ifdef RTOS_DRIVER_RL_TEST
 #define EAPP_AGENT_TID 1
-   extern char *_agent_start;
-   extern char *_agent_end;
+    extern char *_agent_start;
+    extern char *_agent_end;
 
-   size_t elf_size_3 = (char *)&_agent_end - (char *)&_agent_start;
+    size_t elf_size_3 = (char *)&_agent_end - (char *)&_agent_start;
 
-   printf("Agent at 0x%p-0x%p!\n", &_agent_start, &_agent_end);
+    printf("Agent at 0x%p-0x%p!\n", &_agent_start, &_agent_end);
 
-   xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, &enclave3);
-   xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 30, &driver);
+    xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, &enclave3);
+    xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 30, &driver);
 #endif
 
 #ifdef RL_TASK_TEST
-   printf("Running Agent Task and Driver Task Test...\n")
+    printf("Running Agent Task and Driver Task Test...\n")
 
-   xAgentQueue = xQueueCreate(10, sizeof(uintptr_t));
-   xDriverQueue = xQueueCreate(10, sizeof(uintptr_t));
+        xAgentQueue = xQueueCreate(10, sizeof(uintptr_t));
+    xDriverQueue = xQueueCreate(10, sizeof(uintptr_t));
 
-   xTaskCreate(agent_task, "agent", configMINIMAL_STACK_SIZE * 6, NULL, 25, &agent);
-   xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 25, &driver);
+    xTaskCreate(agent_task, "agent", configMINIMAL_STACK_SIZE * 6, NULL, 25, &agent);
+    xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 25, &driver);
 #endif
 
-   xTaskCreate(vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void *)uart, 1, &taskCLI);
+    xTaskCreate(vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void *)uart, 1, &taskCLI);
 
-   /* Register commands with the FreeRTOS+CLI command interpreter. */
-   vRegisterCLICommands();
+    /* Register commands with the FreeRTOS+CLI command interpreter. */
+    vRegisterCLICommands();
 
-   /* Start the tasks and timer running. */
+    /* Start the tasks and timer running. */
     et = get_cycles();
     printf("Setup End Time: %u\nDuration: %u\n", et, et - st);
     vTaskStartScheduler();
 
-   //Should not reach here!
-   while (1)
-   {
-       printf("STUCK!\n");
-   }
-   return 1;
+    //Should not reach here!
+    while (1)
+    {
+        printf("STUCK!\n");
+    }
+    return 1;
 }
 
 #ifdef TEST
 
-static void taskTestFn1(void *pvParameters){
-   printf("Your number is: %i\n", (int)pvParameters);
+static void taskTestFn1(void *pvParameters)
+{
+    printf("Your number is: %i\n", (int)pvParameters);
 
-   int x; 
+    int x;
 
-   // xTaskNotifyGive(taskTest2);
+    // xTaskNotifyGive(taskTest2);
 
-   ulTaskNotifyTake( pdTRUE, 100000 );
-   xQueueReceive( xQueue, &x, 100000 );
+    ulTaskNotifyTake(pdTRUE, 100000);
+    xQueueReceive(xQueue, &x, 100000);
 
-   printf("[Receiver]: %d\n", x);
-   printf("Untrusted Task 1 DONE\n"); 
-   xPortTaskReturn(RET_EXIT);
+    printf("[Receiver]: %d\n", x);
+    printf("Untrusted Task 1 DONE\n");
+    xPortTaskReturn(RET_EXIT);
 }
 
-static void taskTestFn2(void *pvParameters){
-   printf("Untrusted Task 2 before yield\n");
-   int send = 1337; 
-   // xPortReturn(RET_YIELD);
-   // ulTaskNotifyTake( pdTRUE, 100000 );
-   xQueueSend( xQueue, &send, 100000 );
-   // xTaskNotifyGive( taskTest );
-   printf("Untrusted Task 2 DONE\n");
-   printf("Task Runtime: %u\n", xTaskGetTickCount());
-   xPortTaskReturn(RET_EXIT);
+static void taskTestFn2(void *pvParameters)
+{
+    printf("Untrusted Task 2 before yield\n");
+    int send = 1337;
+    // xPortReturn(RET_YIELD);
+    // ulTaskNotifyTake( pdTRUE, 100000 );
+    xQueueSend(xQueue, &send, 100000);
+    // xTaskNotifyGive( taskTest );
+    printf("Untrusted Task 2 DONE\n");
+    printf("Task Runtime: %u\n", xTaskGetTickCount());
+    xPortTaskReturn(RET_EXIT);
 }
 
 #endif
 
-
 #ifdef RL_TASK_TEST
-static void agent_task(void *pvParameters){
+static void agent_task(void *pvParameters)
+{
     cycles_t st = get_cycles();
     printf("Agent Start Time: %u\n", st);
     printf("Enter Agent\n");
-
-    for(int i = 0; i < 1000; i++){
-        syscall_task_yield();
-    }
-
-    cycles_t et = get_cycles();
-    printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
-
-    syscall_task_return();
-
 
     int action;
     int state;
@@ -300,7 +284,6 @@ static void agent_task(void *pvParameters){
 
             send_env_step(xDriverQueue, xAgentQueue, &next, action);
 
-
             new_state = next.ctx.new_state;
             reward = next.ctx.reward;
             done = next.ctx.done;
@@ -316,7 +299,7 @@ static void agent_task(void *pvParameters){
                 if (reward == 1)
                 {
                     if (e_greedy > E_GREEDY_F)
-                    e_greedy *= E_GREEDY_DECAY;
+                        e_greedy *= E_GREEDY_DECAY;
 #ifdef DEBUG
                     printf("You reached the goal!\n");
 #endif
@@ -342,11 +325,12 @@ static void agent_task(void *pvParameters){
     return_general();
 }
 
-
-static void driver_task(void *pvParameters){
+static void driver_task(void *pvParameters)
+{
     printf("Enter Simulator\n");
 
-    for(int i = 0; i < 1000; i++){
+    for (int i = 0; i < 1000; i++)
+    {
         syscall_task_yield();
     }
 
@@ -354,30 +338,31 @@ static void driver_task(void *pvParameters){
 
     syscall_task_return();
 
-
     env_setup();
     struct send_action_args *args;
 
-    while(1){
+    while (1)
+    {
 
-      xQueueReceive(xDriverQueue, &args, QUEUE_MAX_DELAY);
-        
-      switch(args->msg_type){
-         case RESET:
-               env_reset();
-               xQueueSend(xAgentQueue, &args, QUEUE_MAX_DELAY);
-               break;
-         case STEP:
-               step(&args->next, args->action);
-               xQueueSend(xAgentQueue, &args, QUEUE_MAX_DELAY);               
-               break;
-         case FINISH:
-               goto done;
-               break;
-         default:
+        xQueueReceive(xDriverQueue, &args, QUEUE_MAX_DELAY);
+
+        switch (args->msg_type)
+        {
+        case RESET:
+            env_reset();
+            xQueueSend(xAgentQueue, &args, QUEUE_MAX_DELAY);
+            break;
+        case STEP:
+            step(&args->next, args->action);
+            xQueueSend(xAgentQueue, &args, QUEUE_MAX_DELAY);
+            break;
+        case FINISH:
+            goto done;
+            break;
+        default:
             //    printf("Invalid message type!\n");
-               break;
-      }
+            break;
+        }
     }
 
 done:
@@ -386,13 +371,15 @@ done:
 #endif
 
 #ifdef RTOS_AGENT_RL_TEST
-void eapp_send_finish(){
+void eapp_send_finish()
+{
     struct send_action_args args;
     args.msg_type = FINISH;
     sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 }
 
-void eapp_send_env_reset(){
+void eapp_send_env_reset()
+{
 
     struct send_action_args args;
     args.msg_type = RESET;
@@ -400,31 +387,32 @@ void eapp_send_env_reset(){
 
     int recv_msg = sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 
-
-    while(recv_msg) {
+    while (recv_msg)
+    {
         xPortTaskReturn(RET_YIELD);
         recv_msg = sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
     }
-        
 }
 
-void eapp_send_env_step(struct probability_matrix_item *next, int action){
+void eapp_send_env_step(struct probability_matrix_item *next, int action)
+{
     struct send_action_args args;
     args.action = action;
     args.msg_type = STEP;
 
-    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD); 
+    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 
-    while(sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD)){
+    while (sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD))
+    {
         xPortTaskReturn(RET_YIELD);
     }
 
     next->ctx.done = args.next.ctx.done;
     next->ctx.new_state = args.next.ctx.new_state;
     next->ctx.reward = args.next.ctx.reward;
-
 }
-static void agent_task(void *pvParameters){
+static void agent_task(void *pvParameters)
+{
     cycles_t st = get_cycles();
     printf("Agent Start Time: %u\n", st);
     printf("Enter Agent\n");
@@ -464,7 +452,6 @@ static void agent_task(void *pvParameters){
 
             eapp_send_env_step(&next, action);
 
-
             new_state = next.ctx.new_state;
             reward = next.ctx.reward;
             done = next.ctx.done;
@@ -480,7 +467,7 @@ static void agent_task(void *pvParameters){
                 if (reward == 1)
                 {
                     if (e_greedy > E_GREEDY_F)
-                    e_greedy *= E_GREEDY_DECAY;
+                        e_greedy *= E_GREEDY_DECAY;
 #ifdef DEBUG
                     printf("You reached the goal!\n");
 #endif
@@ -508,31 +495,35 @@ static void agent_task(void *pvParameters){
 #endif
 
 #ifdef RTOS_DRIVER_RL_TEST
-static void driver_task(void *pvParameters){
+static void driver_task(void *pvParameters)
+{
     printf("Enter Simulator\n");
     env_setup();
     struct send_action_args *args;
 
-    while(1){
+    while (1)
+    {
 
-        while(sbi_recv(EAPP_AGENT_TID, &args, sizeof(struct send_action_args)));
-        
-      switch(args->msg_type){
-         case RESET:
-               env_reset();
-                sbi_send(EAPP_AGENT_TID, &args, sizeof(struct send_action_args));
-               break;
-         case STEP:
-               step(&args->next, args->action);
-                sbi_send(EAPP_AGENT_TID, &args, sizeof(struct send_action_args));           
-               break;
-         case FINISH:
-               goto done;
-               break;
-         default:
-               printf("Invalid message type!\n");
-               break;
-      }
+        while (sbi_recv(EAPP_AGENT_TID, &args, sizeof(struct send_action_args)))
+            ;
+
+        switch (args->msg_type)
+        {
+        case RESET:
+            env_reset();
+            sbi_send(EAPP_AGENT_TID, &args, sizeof(struct send_action_args));
+            break;
+        case STEP:
+            step(&args->next, args->action);
+            sbi_send(EAPP_AGENT_TID, &args, sizeof(struct send_action_args));
+            break;
+        case FINISH:
+            goto done;
+            break;
+        default:
+            printf("Invalid message type!\n");
+            break;
+        }
     }
 
 done:

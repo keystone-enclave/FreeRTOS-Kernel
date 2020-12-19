@@ -115,15 +115,6 @@ void EAPP_ENTRY eapp_entry(int DRIVER_TID)
     printf("Agent Start Time: %u\n", st);
     printf("Enter Agent\n");
 
-    for(int i = 0; i < 1000; i++){
-        syscall_task_yield();
-    }
-
-    cycles_t et = get_cycles();
-    printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
-
-    syscall_task_return();
-
     int action;
     int state;
     int new_state;
