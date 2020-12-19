@@ -61,7 +61,7 @@ FreeRTOS_run( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommand
 			if( ( pcWriteBuffer[ xFunctionStringLength ] == ' ' ) || ( pcWriteBuffer[ xFunctionStringLength ] == 0x00 ) )
 			{
 				if (pxFunction->pxFunctionDefinition->enclaveSize) {
-   					xTaskCreateEnclave((uintptr_t) pxFunction->pxFunctionDefinition->pxFunctionCallback, pxFunction->pxFunctionDefinition->enclaveSize, pxFunction->pxFunctionDefinition->pcFunction, 2, NULL); 
+   					xTaskCreateEnclave((uintptr_t) pxFunction->pxFunctionDefinition->pxFunctionCallback, pxFunction->pxFunctionDefinition->enclaveSize, pxFunction->pxFunctionDefinition->pcFunction, 2, NULL, NULL); 
 				} else {
 					xTaskCreate(pxFunction->pxFunctionDefinition->pxFunctionCallback, pxFunction->pxFunctionDefinition->pcFunction, configMINIMAL_STACK_SIZE, NULL, 2, NULL);
 				}

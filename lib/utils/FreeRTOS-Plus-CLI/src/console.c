@@ -23,12 +23,10 @@ BaseType_t xMoreDataToFollow;
 /* The input and output buffers are declared static to keep them off the stack. */
 static char pcOutputString[ MAX_OUTPUT_LENGTH ], pcInputString[ MAX_INPUT_LENGTH ];
 
-    printf("Parameters: %p\n", pvParameters);
     /* This code assumes the peripheral being used as the console has already
     been opened and configured, and is passed into the task as the task
     parameter.  Cast the task parameter to the correct type. */
     xConsole = ( Peripheral_Descriptor_t ) pvParameters;
-    printf("Console: %p\n", xConsole);
     /* Send a welcome message to the user knows they are connected. */
     FreeRTOS_write( xConsole, pcWelcomeMessage, strlen( pcWelcomeMessage ) );
 

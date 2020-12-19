@@ -1,14 +1,12 @@
-#include "simulator.h"
+#include "enclave_rl.h"
 #include "printf.h"
 #include "eapp_utils.h"
 
 int grid[Q_STATE_N * Q_STATE_N] = {0}; 
+static unsigned long dummy_peripheral[1]  = {0}; 
 struct probability_matrix_item probability_matrix[Q_STATE_N * Q_STATE_N][N_ACTION] = {0}; 
 int curr_state = 0;
 int last_action = NO_ACTION;
-
-#define AGENT_TID 0
-// #define AGENT_TID 1
 
 void init_helper_1(int *grid_row, int filter)
 {
@@ -292,6 +290,9 @@ void step(struct probability_matrix_item *m_item, int action)
     curr_state = m_item->ctx.new_state;
     last_action = action;
 
+    //Do a dummy read to simulate writing to peripheral register
+    dummy_peripheral[0] = 10; 
+
 #ifdef DEBUG
     switch (action)
     {
@@ -316,10 +317,22 @@ void step(struct probability_matrix_item *m_item, int action)
 #endif
 }
 
-void EAPP_ENTRY eapp_entry(){
+void EAPP_ENTRY eapp_entry(int AGENT_TID){
     printf("Enter Simulator\n");
+
+
+    for(int i = 0; i < 1000; i++){
+        syscall_task_yield();
+    }
+
+    printf("Simulator End\n");
+
+    syscall_task_return();
+
     env_setup();
     struct send_action_args args;
+    struct probability_matrix_item p_item;
+    int reset_ack = 1; 
 
     while(1){
 
@@ -328,11 +341,11 @@ void EAPP_ENTRY eapp_entry(){
         switch(args.msg_type){
             case RESET:
                 env_reset();
-                sbi_send(AGENT_TID, &args, sizeof(struct send_action_args), YIELD);
+                sbi_send(AGENT_TID, &reset_ack, sizeof(int), YIELD);
                 break;
             case STEP:
-                step(&args.next, args.action);
-                sbi_send(AGENT_TID, &args, sizeof(struct send_action_args), YIELD); 
+                step(&p_item, args.action);
+                sbi_send(AGENT_TID, &p_item.ctx, sizeof(struct ctx), YIELD); 
                 break;
             case FINISH:
                 goto done;

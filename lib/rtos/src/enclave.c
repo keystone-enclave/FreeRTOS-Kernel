@@ -14,6 +14,7 @@
 uintptr_t xTaskCreateEnclave(uintptr_t start, uintptr_t size,
                               const char *const enclaveName,
                               UBaseType_t uxPriority,
+                              void * const pvParameters, 
                               TaskHandle_t *const pxCreatedTask)
 {
 
@@ -29,6 +30,7 @@ uintptr_t xTaskCreateEnclave(uintptr_t start, uintptr_t size,
 
     size_t i;
     elf_getSectionNamed(&elf, ".stack", &i);
+    register_args.arg = (uintptr_t) pvParameters;
     register_args.sp = (uintptr_t) ((char *) start + elf_getSectionOffset(&elf, i)); 
     register_args.stack_size = elf_getSectionSize(&elf, i);
 

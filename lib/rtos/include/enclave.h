@@ -6,6 +6,7 @@
 uintptr_t xTaskCreateEnclave(uintptr_t start, uintptr_t size,
                             const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
                             UBaseType_t uxPriority,
+                            void * const pvParameters,
                             TaskHandle_t * const pxCreatedTask);
 
 

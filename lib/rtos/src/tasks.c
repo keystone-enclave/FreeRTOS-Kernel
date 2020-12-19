@@ -33,6 +33,8 @@
  * task.h is included from an application file. */
 #define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 
+#define TASK_REGISTER_ALL
+
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
 #include "task.h"
@@ -5424,7 +5426,7 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
 
 /* -------------------- Keystone Changes  ------------------------ */
 
-        void init_register_args(TCB_t *pxNewTCB, struct register_sbi_arg *register_args, void *pvParameters)
+void init_register_args(TCB_t *pxNewTCB, struct register_sbi_arg *register_args, void *pvParameters)
         {
 
             register_args->pc = pxNewTCB->pxTopOfStack[0];
@@ -5488,7 +5490,6 @@ void startTasks()
     {
 
         int ret_code = switch_tasks_general(pxCurrentTCB, -1);
-        // int ret_code = syscall_switch_task(pxCurrentTCB->task_id, 0);
         switch (ret_code)
         {
         case RET_EXIT:
@@ -5510,6 +5511,7 @@ void startTasks()
         }
     }
 }
+
 
 void return_general()
 {

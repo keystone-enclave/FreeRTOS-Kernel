@@ -27,9 +27,9 @@
 
 // #define RL_TASK_TEST
 // #define ENCLAVE
-// #define ENCLAVE_RL
+#define ENCLAVE_RL
 // #define TEST
-#define RTOS_AGENT_RL_TEST
+// #define RTOS_AGENT_RL_TEST
 // #define RTOS_DRIVER_RL_TEST
 
 
@@ -111,8 +111,9 @@ int main( void )
 
    extern uintptr_t _rtos_base; 
    extern uintptr_t _rtos_end; 
-
+    #ifdef RTOS_DEBUG
     printf("Free RTOS booted at 0x%p-0x%p!\n", &_rtos_base, &_rtos_end); 
+    #endif 
 
 #ifdef TEST
    xTaskCreate(taskTestFn1, "task1", configMINIMAL_STACK_SIZE, (void *)5, 25, &taskTest1);
@@ -138,6 +139,11 @@ int main( void )
 #endif
 
 #ifdef ENCLAVE_RL
+    #define DRIVER_TID 2
+    #define AGENT_TID 1
+
+    printf("Running Agent Enclave and Driver Enclave Test...\n");
+
    extern char *_agent_start;
    extern char *_agent_end;
 
@@ -147,12 +153,13 @@ int main( void )
    size_t elf_size_3 = (char *)&_agent_end - (char *)&_agent_start;
    size_t elf_size_4 = (char *)&_simulator_end - (char *)&_simulator_start;
 
+#ifdef RTOS_DEBUG
    printf("Agent at 0x%p-0x%p!\n", &_agent_start, &_agent_end);
    printf("Simulator at 0x%p-0x%p!\n", &_simulator_start, &_simulator_end);
+#endif
 
-   xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, &enclave3);
-   xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, &enclave4);
-//    xTaskCreate(taskPrintTaskTime, "Runtime", configMINIMAL_STACK_SIZE, (void *)&enclave3, 2, &taskRT);
+   xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, (void * const) DRIVER_TID, &enclave3);
+   xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, (void * const) AGENT_TID, &enclave4);
 #endif
 
 #ifdef RTOS_AGENT_RL_TEST
@@ -182,12 +189,13 @@ int main( void )
 #endif
 
 #ifdef RL_TASK_TEST
+   printf("Running Agent Task and Driver Task Test...\n")
+
    xAgentQueue = xQueueCreate(10, sizeof(uintptr_t));
    xDriverQueue = xQueueCreate(10, sizeof(uintptr_t));
 
    xTaskCreate(agent_task, "agent", configMINIMAL_STACK_SIZE * 6, NULL, 25, &agent);
-   xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 21, &driver);
-//    FreeRTOS_RegisterFunction( "taskTest2", taskTestFn2, 0 );
+   xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 25, &driver);
 #endif
 
    xTaskCreate(vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void *)uart, 1, &taskCLI);
@@ -201,18 +209,12 @@ int main( void )
     vTaskStartScheduler();
 
    //Should not reach here!
-//    while (1)
-//    {
-//        printf("STUCK!\n");
-//    }
+   while (1)
+   {
+       printf("STUCK!\n");
+   }
    return 1;
 }
-
-// static void taskPrintTaskTime(void *pvParameters) {
-//     if (pvParameters != NULL) {
-//         printf("Task Runtime: %u\n", ((TaskHandle_t) pvParameters)->ulRunTimeCounter);
-//     }
-// }
 
 #ifdef TEST
 
@@ -251,6 +253,17 @@ static void agent_task(void *pvParameters){
     cycles_t st = get_cycles();
     printf("Agent Start Time: %u\n", st);
     printf("Enter Agent\n");
+
+    for(int i = 0; i < 1000; i++){
+        syscall_task_yield();
+    }
+
+    cycles_t et = get_cycles();
+    printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
+
+    syscall_task_return();
+
+
     int action;
     int state;
     int new_state;
@@ -324,7 +337,7 @@ static void agent_task(void *pvParameters){
     }
 
     send_finish(xDriverQueue);
-    cycles_t et = get_cycles();
+    // cycles_t et = get_cycles();
     printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
     return_general();
 }
@@ -332,6 +345,16 @@ static void agent_task(void *pvParameters){
 
 static void driver_task(void *pvParameters){
     printf("Enter Simulator\n");
+
+    for(int i = 0; i < 1000; i++){
+        syscall_task_yield();
+    }
+
+    printf("Simulator End\n");
+
+    syscall_task_return();
+
+
     env_setup();
     struct send_action_args *args;
 

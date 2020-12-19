@@ -2,12 +2,11 @@
 #include <stdint.h>
 #include <timex.h>
 
-#include "simulator.h"
+#include "enclave_rl.h"
 #include "printf.h"
 #include "eapp_utils.h"
 
-// #define DRIVER_TID 0
-#define DRIVER_TID 2
+int DRIVER_TID = -1; 
 
 #define RAND_MAX 2147483647
 static unsigned long my_rand_state = 1;
@@ -80,40 +79,51 @@ void print_q_table()
     printf("\n");
 }
 
-void send_finish(){
+void send_finish(int DRIVER_TID){
     struct send_action_args args;
     args.msg_type = FINISH;
     sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 }
 
-void send_env_reset(){
+void send_env_reset(int DRIVER_TID){
     struct send_action_args args;
+    int reset_ack; 
     args.msg_type = RESET;
     sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
-    while(sbi_recv(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD));
+    while(sbi_recv(DRIVER_TID, &reset_ack, sizeof(struct send_action_args), YIELD));
 }
 
-void send_env_step(struct probability_matrix_item *next, int action){
+void send_env_step(int DRIVER_TID, struct probability_matrix_item *next, int action){
 
     struct send_action_args args;
+    struct ctx ctx_buf; 
     args.action = action;
     args.msg_type = STEP;
 
     sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD); 
+    while(sbi_recv(DRIVER_TID, &ctx_buf, sizeof(struct ctx), YIELD));
 
-    while(sbi_recv(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD));
-
-    next->ctx.done = args.next.ctx.done;
-    next->ctx.new_state = args.next.ctx.new_state;
-    next->ctx.reward = args.next.ctx.reward;
+    next->ctx.done = ctx_buf.done;
+    next->ctx.new_state = ctx_buf.new_state;
+    next->ctx.reward = ctx_buf.reward;
 
 }
 
-void EAPP_ENTRY eapp_entry()
+void EAPP_ENTRY eapp_entry(int DRIVER_TID)
 {
     cycles_t st = get_cycles();
     printf("Agent Start Time: %u\n", st);
     printf("Enter Agent\n");
+
+    for(int i = 0; i < 1000; i++){
+        syscall_task_yield();
+    }
+
+    cycles_t et = get_cycles();
+    printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
+
+    syscall_task_return();
+
     int action;
     int state;
     int new_state;
@@ -127,12 +137,11 @@ void EAPP_ENTRY eapp_entry()
     int i, j;
     for (i = 0; i < NUM_EPISODES; i++)
     {
-
         done = FALSE;
         rewards_current_episode = 0;
         state = 0;
 
-        send_env_reset();
+        send_env_reset(DRIVER_TID);
 
         for (j = 0; j < STEPS_PER_EP; j++)
         {
@@ -148,7 +157,7 @@ void EAPP_ENTRY eapp_entry()
                 action = rand() % 4;
             }
 
-            send_env_step(&next, action);
+            send_env_step(DRIVER_TID, &next, action);
 
 
             new_state = next.ctx.new_state;
@@ -186,8 +195,8 @@ void EAPP_ENTRY eapp_entry()
         }
     }
 
-    send_finish();
-    cycles_t et = get_cycles();
+    send_finish(DRIVER_TID);
+    // cycles_t et = get_cycles();
     printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
     syscall_task_return();
 }
