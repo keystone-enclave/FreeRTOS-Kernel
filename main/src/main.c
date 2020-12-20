@@ -10,6 +10,7 @@
 #include <string.h>
 #include <queue.h>
 #include <rl.h>
+#include <rl_config.h>
 #include <timex.h>
 
 #include "FreeRTOS_IO.h"
@@ -19,18 +20,6 @@
 #include "devices.h"
 
 #define HEAP_SIZE 0x800
-
-/* *** Configurations  *** */
-
-/* Enables all tasks to be switched via the SM*/
-// #define TASK_REGISTER_ALL
-
-// #define RL_TASK_TEST
-// #define ENCLAVE
-#define ENCLAVE_RL
-// #define TEST
-// #define RTOS_AGENT_RL_TEST
-// #define RTOS_DRIVER_RL_TEST
 
 extern uintptr_t __stack_top;
 extern uintptr_t __heap_base;
@@ -48,7 +37,7 @@ static void taskTestFn2(void *pvParameters);
 
 QueueHandle_t xQueue = 0;
 
-#ifdef RL_TASK_TEST
+#ifdef TA_TD_RL
 TaskHandle_t agent = 0;
 TaskHandle_t driver = 0;
 
@@ -66,18 +55,18 @@ TaskHandle_t enclave1 = 0;
 TaskHandle_t enclave2 = 0;
 #endif
 
-#ifdef ENCLAVE_RL
+#ifdef EA_ED_RL
 TaskHandle_t enclave3 = 0;
 TaskHandle_t enclave4 = 0;
 #endif
 
-#ifdef RTOS_AGENT_RL_TEST
+#ifdef TA_ED_RL
 TaskHandle_t agent;
 TaskHandle_t enclave4;
 static void agent_task(void *pvParameters);
 #endif
 
-#ifdef RTOS_DRIVER_RL_TEST
+#ifdef EA_TD_RL
 TaskHandle_t driver = 0;
 TaskHandle_t enclave3 = 0;
 static void driver_task(void *pvParameters);
@@ -98,12 +87,10 @@ int main(void)
     xQueue = xQueueCreate(10, sizeof(uintptr_t));
 
     uart = FreeRTOS_open("/dev/uart", 0);
-
-    printf("UART: %p\n", uart);
-
+    
+#ifdef RTOS_DEBUG
     extern uintptr_t _rtos_base;
     extern uintptr_t _rtos_end;
-#ifdef RTOS_DEBUG
     printf("Free RTOS booted at 0x%p-0x%p!\n", &_rtos_base, &_rtos_end);
 #endif
 
@@ -130,10 +117,7 @@ int main(void)
 
 #endif
 
-#ifdef ENCLAVE_RL
-#define DRIVER_TID 2
-#define AGENT_TID 1
-
+#ifdef EA_ED_RL
     printf("Running Agent Enclave and Driver Enclave Test...\n");
 
     extern char *_agent_start;
@@ -154,36 +138,42 @@ int main(void)
     xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, (void *const)AGENT_TID, &enclave4);
 #endif
 
-#ifdef RTOS_AGENT_RL_TEST
-#define EAPP_DRIVER_TID 1
+#ifdef TA_ED_RL
     extern char *_simulator_start;
     extern char *_simulator_end;
 
+    printf("Running Agent Task and Driver Enclave Test...\n");
     size_t elf_size_4 = (char *)&_simulator_end - (char *)&_simulator_start;
 
+#ifdef RTOS_DEBUG
     printf("Simulator at 0x%p-0x%p!\n", &_simulator_start, &_simulator_end);
-
-    xTaskCreate(agent_task, "agent", configMINIMAL_STACK_SIZE * 6, NULL, 30, &agent);
-    xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, &enclave4);
 #endif
 
-#ifdef RTOS_DRIVER_RL_TEST
+    xTaskCreate(agent_task, "agent", configMINIMAL_STACK_SIZE * 6, NULL, 30, &agent);
+    xTaskCreateEnclave((uintptr_t)&_simulator_start, elf_size_4, "simulator", 30, (void *const) AGENT_TID ,&enclave4);
+#endif
+
+#ifdef EA_TD_RL
 #define EAPP_AGENT_TID 1
     extern char *_agent_start;
     extern char *_agent_end;
+    
+    printf("Running Agent Enclave and Driver Task Test...\n");
 
     size_t elf_size_3 = (char *)&_agent_end - (char *)&_agent_start;
 
+#ifdef RTOS_DEBUG
     printf("Agent at 0x%p-0x%p!\n", &_agent_start, &_agent_end);
+#endif
 
     xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, &enclave3);
     xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 30, &driver);
 #endif
 
-#ifdef RL_TASK_TEST
-    printf("Running Agent Task and Driver Task Test...\n")
+#ifdef TA_TD_RL
+    printf("Running Agent Task and Driver Task Test...\n");
 
-        xAgentQueue = xQueueCreate(10, sizeof(uintptr_t));
+    xAgentQueue = xQueueCreate(10, sizeof(uintptr_t));
     xDriverQueue = xQueueCreate(10, sizeof(uintptr_t));
 
     xTaskCreate(agent_task, "agent", configMINIMAL_STACK_SIZE * 6, NULL, 25, &agent);
@@ -241,7 +231,7 @@ static void taskTestFn2(void *pvParameters)
 
 #endif
 
-#ifdef RL_TASK_TEST
+#ifdef TA_TD_RL
 static void agent_task(void *pvParameters)
 {
     cycles_t st = get_cycles();
@@ -320,7 +310,7 @@ static void agent_task(void *pvParameters)
     }
 
     send_finish(xDriverQueue);
-    // cycles_t et = get_cycles();
+    cycles_t et = get_cycles();
     printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
     return_general();
 }
@@ -328,16 +318,6 @@ static void agent_task(void *pvParameters)
 static void driver_task(void *pvParameters)
 {
     printf("Enter Simulator\n");
-
-    for (int i = 0; i < 1000; i++)
-    {
-        syscall_task_yield();
-    }
-
-    printf("Simulator End\n");
-
-    syscall_task_return();
-
     env_setup();
     struct send_action_args *args;
 
@@ -370,46 +350,48 @@ done:
 }
 #endif
 
-#ifdef RTOS_AGENT_RL_TEST
+#ifdef TA_ED_RL
 void eapp_send_finish()
 {
     struct send_action_args args;
     args.msg_type = FINISH;
-    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 }
 
 void eapp_send_env_reset()
 {
 
     struct send_action_args args;
+    int reset_ack;
     args.msg_type = RESET;
-    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 
-    int recv_msg = sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+    int recv_msg = sbi_recv(DRIVER_TID, &reset_ack, sizeof(int), YIELD);
 
     while (recv_msg)
     {
-        xPortTaskReturn(RET_YIELD);
-        recv_msg = sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+        yield_general(); 
+        recv_msg = sbi_recv(DRIVER_TID, &reset_ack, sizeof(int), YIELD);
     }
 }
 
 void eapp_send_env_step(struct probability_matrix_item *next, int action)
 {
     struct send_action_args args;
+    struct ctx ctx_buf; 
     args.action = action;
     args.msg_type = STEP;
 
-    sbi_send(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 
-    while (sbi_recv(EAPP_DRIVER_TID, &args, sizeof(struct send_action_args), YIELD))
+    while (sbi_recv(DRIVER_TID, &ctx_buf, sizeof(struct ctx), YIELD))
     {
-        xPortTaskReturn(RET_YIELD);
+        yield_general();
     }
 
-    next->ctx.done = args.next.ctx.done;
-    next->ctx.new_state = args.next.ctx.new_state;
-    next->ctx.reward = args.next.ctx.reward;
+    next->ctx.done = ctx_buf.done;
+    next->ctx.new_state = ctx_buf.new_state;
+    next->ctx.reward = ctx_buf.reward;
 }
 static void agent_task(void *pvParameters)
 {
@@ -490,11 +472,11 @@ static void agent_task(void *pvParameters)
     eapp_send_finish();
     cycles_t et = get_cycles();
     printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
-    xPortTaskReturn(RET_EXIT);
+    return_general(); 
 }
 #endif
 
-#ifdef RTOS_DRIVER_RL_TEST
+#ifdef EA_TD_RL
 static void driver_task(void *pvParameters)
 {
     printf("Enter Simulator\n");

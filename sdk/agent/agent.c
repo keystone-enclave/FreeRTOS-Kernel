@@ -6,7 +6,6 @@
 #include "printf.h"
 #include "eapp_utils.h"
 
-int DRIVER_TID = -1; 
 
 #define RAND_MAX 2147483647
 static unsigned long my_rand_state = 1;
@@ -187,7 +186,7 @@ void EAPP_ENTRY eapp_entry(int DRIVER_TID)
     }
 
     send_finish(DRIVER_TID);
-    // cycles_t et = get_cycles();
+    cycles_t et = get_cycles();
     printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
     syscall_task_return();
 }

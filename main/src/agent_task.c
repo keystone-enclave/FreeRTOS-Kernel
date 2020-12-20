@@ -103,16 +103,18 @@ void send_env_reset(QueueHandle_t send_queue, QueueHandle_t recv_queue){
 void send_env_step(QueueHandle_t send_queue, QueueHandle_t recv_queue, struct probability_matrix_item *next, int action){
 
     struct send_action_args send_action;
+    struct ctx ctx_recv; 
     send_action.action = action;
     send_action.msg_type = STEP;
 
     struct send_action_args *args = &send_action;
+    struct ctx *ctx_buf = &ctx_recv;
 
     xQueueSend(send_queue, &args, QUEUE_MAX_DELAY);
-    xQueueReceive(recv_queue, &args, QUEUE_MAX_DELAY);
+    xQueueReceive(recv_queue, &ctx_buf, QUEUE_MAX_DELAY);
 
-    next->ctx.done = args->next.ctx.done;
-    next->ctx.new_state = args->next.ctx.new_state;
-    next->ctx.reward = args->next.ctx.reward;
+    next->ctx.done = ctx_buf->done;
+    next->ctx.new_state = ctx_buf->new_state;
+    next->ctx.reward = ctx_buf->reward;
 }
 
