@@ -154,7 +154,6 @@ int main(void)
 #endif
 
 #ifdef EA_TD_RL
-#define EAPP_AGENT_TID 1
     extern char *_agent_start;
     extern char *_agent_end;
     
@@ -165,8 +164,7 @@ int main(void)
 #ifdef RTOS_DEBUG
     printf("Agent at 0x%p-0x%p!\n", &_agent_start, &_agent_end);
 #endif
-
-    xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, &enclave3);
+    xTaskCreateEnclave((uintptr_t)&_agent_start, elf_size_3, "agent", 30, (void * const) DRIVER_TID, &enclave3);
     xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 30, &driver);
 #endif
 
@@ -320,21 +318,24 @@ static void driver_task(void *pvParameters)
     printf("Enter Simulator\n");
     env_setup();
     struct send_action_args *args;
+    struct probability_matrix_item p_item;
+    struct ctx *ctx = &p_item.ctx;
+    int reset_ack = 1; 
+
 
     while (1)
     {
-
         xQueueReceive(xDriverQueue, &args, QUEUE_MAX_DELAY);
 
         switch (args->msg_type)
         {
         case RESET:
             env_reset();
-            xQueueSend(xAgentQueue, &args, QUEUE_MAX_DELAY);
+            xQueueSend(xAgentQueue, &reset_ack, QUEUE_MAX_DELAY);
             break;
         case STEP:
-            step(&args->next, args->action);
-            xQueueSend(xAgentQueue, &args, QUEUE_MAX_DELAY);
+            step(&p_item, args->action);
+            xQueueSend(xAgentQueue, &ctx, QUEUE_MAX_DELAY);
             break;
         case FINISH:
             goto done;
@@ -481,23 +482,22 @@ static void driver_task(void *pvParameters)
 {
     printf("Enter Simulator\n");
     env_setup();
-    struct send_action_args *args;
+    struct send_action_args args;
+    struct probability_matrix_item p_item;
+    int reset_ack = 1; 
 
     while (1)
     {
-
-        while (sbi_recv(EAPP_AGENT_TID, &args, sizeof(struct send_action_args)))
-            ;
-
-        switch (args->msg_type)
+        while (sbi_recv(AGENT_TID, &args, sizeof(struct send_action_args), YIELD));
+        switch (args.msg_type)
         {
         case RESET:
             env_reset();
-            sbi_send(EAPP_AGENT_TID, &args, sizeof(struct send_action_args));
+            sbi_send(AGENT_TID, &reset_ack, sizeof(int),YIELD);
             break;
         case STEP:
-            step(&args->next, args->action);
-            sbi_send(EAPP_AGENT_TID, &args, sizeof(struct send_action_args));
+            step(&p_item, args.action);
+            sbi_send(AGENT_TID, &p_item.ctx, sizeof(struct ctx),YIELD);
             break;
         case FINISH:
             goto done;
@@ -509,7 +509,7 @@ static void driver_task(void *pvParameters)
     }
 
 done:
-    xPortTaskReturn(RET_EXIT);
+    return_general();
 }
 #endif
 

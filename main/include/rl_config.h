@@ -5,10 +5,10 @@
 /* Enables all tasks to be switched via the SM*/
 
 /* All tasks must be registered by the SM */
-#define TASK_REGISTER_ALL
+// #define TASK_REGISTER_ALL
 
 /* Enclave Agent <-> Enclave Driver*/
-// #define EA_ED_RL
+#define EA_ED_RL
 
 /* Task Agent <-> Task Driver*/
 // #define TA_TD_RL
@@ -17,7 +17,7 @@
 // #define EA_TD_RL
 
 /* Task Agent <-> Enclave Driver*/
-#define TA_ED_RL
+// #define TA_ED_RL
 
 
 #ifdef EA_ED_RL
@@ -30,8 +30,13 @@
 #endif
 
 #ifdef EA_TD_RL
-#define AGENT_TID 1
-#define DRIVER_TID 0
+    #ifdef TASK_REGISTER_ALL
+    #define AGENT_TID 1
+    #define DRIVER_TID 2
+    #else
+    #define AGENT_TID 1
+    #define DRIVER_TID 0
+    #endif
 #endif
 
 #ifdef TA_ED_RL
