@@ -226,12 +226,12 @@ void vOutputString( const uint8_t * const pucMessage )
 
 // static void prvCreatedTask( void *pvParameters )
 // {
-// int32_t lParameterValue;
+// portPOINTER_SIZE_TYPE lParameterValue;
 // static uint8_t pucLocalBuffer[ 60 ];
 // void vOutputString( const uint8_t * const pucMessage );
 
 // 	/* Cast the parameter to an appropriate type. */
-// 	lParameterValue = ( int32_t ) pvParameters;
+// 	lParameterValue = ( portPOINTER_SIZE_TYPE ) pvParameters;
 
 // 	memset( ( void * ) pucLocalBuffer, 0x00, sizeof( pucLocalBuffer ) );
 // 	sprintf( ( char * ) pucLocalBuffer, "Created task running.  Received parameter %d\r\n\r\n", ( long ) lParameterValue );
@@ -244,7 +244,7 @@ void vOutputString( const uint8_t * const pucMessage )
 // }
 
 static void taskTestFn(void *pvParameters){
-   printf("Your number is: %i\n", (int)pvParameters);
+   printf("Your number is: %p\n", pvParameters);
    printf("Untrusted Task 1 DONE\n"); 
    syscall_task_return();
 }
@@ -258,7 +258,7 @@ portBASE_TYPE xParameterStringLength;
 static const char *pcSuccessMessage = ( char * ) "Task created\r\n";
 static const char *pcFailureMessage = ( char * ) "Task not created\r\n";
 static const char *pcTaskAlreadyCreatedMessage = ( char * ) "The task has already been created. Execute the delete-task command first.\r\n";
-int32_t lParameterValue;
+portPOINTER_SIZE_TYPE lParameterValue;
 
 	/* Remove compile time warnings about unused parameters, and check the
 	write buffer is not NULL.  NOTE - for simplicity, this example assumes the
@@ -275,7 +275,7 @@ int32_t lParameterValue;
 								);
 
 	/* Turn the parameter into a number. */
-	lParameterValue = ( int32_t ) atol( ( const char * ) pcParameterString );
+	lParameterValue = ( portPOINTER_SIZE_TYPE ) atol( ( const char * ) pcParameterString );
 
 	/* Attempt to create the task. */
 	if( xCreatedTaskHandle != NULL )
