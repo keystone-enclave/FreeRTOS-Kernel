@@ -35,21 +35,60 @@ set_target_properties(rtos_simulator PROPERTIES LINK_FLAGS "-static -nostdlib -T
 set_target_properties(rtos_simulator PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -std=c11 -fcommon -fno-zero-initialized-in-bss")
 install(TARGETS rtos_simulator DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
+add_executable(aes rv8/aes/aes.c ${LIB_SOURCE_FILES})
+set_target_properties(aes PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
+set_target_properties(aes PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+install(TARGETS aes DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+
+add_executable(dhrystone rv8/dhrystone/dhrystone.c ${LIB_SOURCE_FILES})
+set_target_properties(dhrystone PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
+set_target_properties(dhrystone PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+install(TARGETS dhrystone DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+
+add_executable(miniz rv8/miniz/miniz.c ${LIB_SOURCE_FILES})
+set_target_properties(miniz PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
+set_target_properties(miniz PROPERTIES COMPILE_FLAGS "-Wall -O0 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+install(TARGETS miniz DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+
+add_executable(norx rv8/norx/norx.c ${LIB_SOURCE_FILES})
+set_target_properties(norx PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
+set_target_properties(norx PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+install(TARGETS norx DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+
+add_executable(primes rv8/primes/primes.c ${LIB_SOURCE_FILES})
+set_target_properties(primes PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
+set_target_properties(primes PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+install(TARGETS primes DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+
+add_executable(qsort rv8/qsort/qsort.c ${LIB_SOURCE_FILES})
+set_target_properties(qsort PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
+set_target_properties(qsort PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+install(TARGETS qsort DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+
+add_executable(sha512 rv8/sha512/sha512.c ${LIB_SOURCE_FILES})
+set_target_properties(sha512 PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
+set_target_properties(sha512 PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+install(TARGETS sha512 DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+
 set(LINK_FILES_PATH ${EXECUTABLE_OUTPUT_PATH}/tests/src)
 file(MAKE_DIRECTORY ${LINK_FILES_PATH})
 
-set(FILES ${LINK_FILES_PATH}/rtos_fibonacci.S ${LINK_FILES_PATH}/rtos_attest.S ${LINK_FILES_PATH}/rtos_agent.S ${LINK_FILES_PATH}/rtos_simulator.S)
-
-# execute_process(
-#     COMMAND touch ${FILES}
-# )
+set(FILES ${LINK_FILES_PATH}/aes.S ${LINK_FILES_PATH}/dhrystone.S ${LINK_FILES_PATH}/miniz.S ${LINK_FILES_PATH}/norx.S ${LINK_FILES_PATH}/primes.S ${LINK_FILES_PATH}/qsort.S ${LINK_FILES_PATH}/sha512.S ${LINK_FILES_PATH}/rtos_fibonacci.S ${LINK_FILES_PATH}/rtos_attest.S ${LINK_FILES_PATH}/rtos_agent.S ${LINK_FILES_PATH}/rtos_simulator.S)
 
 file (WRITE ${LINK_FILES_PATH}/rtos_fibonacci.S ".section .fibonacci\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/rtos_fibonacci\" ")
 file (WRITE ${LINK_FILES_PATH}/rtos_attest.S ".section .attest\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/rtos_attest\" ")
 file (WRITE ${LINK_FILES_PATH}/rtos_agent.S ".section .agent\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/rtos_agent\" ")
 file (WRITE ${LINK_FILES_PATH}/rtos_simulator.S ".section .simulator\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/rtos_simulator\" ")
+file (WRITE ${LINK_FILES_PATH}/aes.S ".section .aes\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/aes\" ")
+file (WRITE ${LINK_FILES_PATH}/dhrystone.S ".section .dhrystone\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/dhrystone\" ")
+file (WRITE ${LINK_FILES_PATH}/miniz.S ".section .miniz\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/miniz\" ")
+file (WRITE ${LINK_FILES_PATH}/norx.S ".section .norx\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/norx\" ")
+file (WRITE ${LINK_FILES_PATH}/primes.S ".section .primes\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/primes\" ")
+file (WRITE ${LINK_FILES_PATH}/qsort.S ".section .qsort\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/qsort\" ")
+file (WRITE ${LINK_FILES_PATH}/sha512.S ".section .sha512\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/sha512\" ")
+
 
 
 # These are required variables
 set(TEST_FILES ${FILES} PARENT_SCOPE)
-set(TEST_NAMES rtos_fibonacci rtos_attest rtos_agent rtos_simulator PARENT_SCOPE)
+set(TEST_NAMES aes dhrystone miniz norx primes qsort sha512 rtos_fibonacci rtos_attest rtos_agent rtos_simulator PARENT_SCOPE)
