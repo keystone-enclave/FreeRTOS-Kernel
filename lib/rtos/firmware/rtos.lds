@@ -4,7 +4,7 @@ ENTRY( setup_rtos )
 
 SECTIONS
 {
-  . = 0x80400000;
+  . = 0x80200000;
   _rtos_base = .; 
   PROVIDE(rtos_base = .);
   .text : {

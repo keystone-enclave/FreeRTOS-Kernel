@@ -1,85 +1,12 @@
-/* @LICENSE(UNSW_OZPLB) */
-
 /*
- * Australian Public Licence B (OZPLB)
+ * Copyright (c) 1999-2004 University of New South Wales
  *
- * Version 1-0
- *
- * Copyright (c) 2004 University of New South Wales
- *
- * All rights reserved.
- *
- * Developed by: Operating Systems and Distributed Systems Group (DiSy)
- *               University of New South Wales
- *               http://www.disy.cse.unsw.edu.au
- *
- * Permission is granted by University of New South Wales, free of charge, to
- * any person obtaining a copy of this software and any associated
- * documentation files (the "Software") to deal with the Software without
- * restriction, including (without limitation) the rights to use, copy,
- * modify, adapt, merge, publish, distribute, communicate to the public,
- * sublicense, and/or sell, lend or rent out copies of the Software, and
- * to permit persons to whom the Software is furnished to do so, subject
- * to the following conditions:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimers.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimers in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of University of New South Wales, nor the names of its
- *       contributors, may be used to endorse or promote products derived
- *       from this Software without specific prior written permission.
- *
- * EXCEPT AS EXPRESSLY STATED IN THIS LICENCE AND TO THE FULL EXTENT
- * PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED "AS-IS", AND
- * NATIONAL ICT AUSTRALIA AND ITS CONTRIBUTORS MAKE NO REPRESENTATIONS,
- * WARRANTIES OR CONDITIONS OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO ANY REPRESENTATIONS, WARRANTIES OR CONDITIONS
- * REGARDING THE CONTENTS OR ACCURACY OF THE SOFTWARE, OR OF TITLE,
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NONINFRINGEMENT,
- * THE ABSENCE OF LATENT OR OTHER DEFECTS, OR THE PRESENCE OR ABSENCE OF
- * ERRORS, WHETHER OR NOT DISCOVERABLE.
- *
- * TO THE FULL EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL
- * NATIONAL ICT AUSTRALIA OR ITS CONTRIBUTORS BE LIABLE ON ANY LEGAL
- * THEORY (INCLUDING, WITHOUT LIMITATION, IN AN ACTION OF CONTRACT,
- * NEGLIGENCE OR OTHERWISE) FOR ANY CLAIM, LOSS, DAMAGES OR OTHER
- * LIABILITY, INCLUDING (WITHOUT LIMITATION) LOSS OF PRODUCTION OR
- * OPERATION TIME, LOSS, DAMAGE OR CORRUPTION OF DATA OR RECORDS; OR LOSS
- * OF ANTICIPATED SAVINGS, OPPORTUNITY, REVENUE, PROFIT OR GOODWILL, OR
- * OTHER ECONOMIC LOSS; OR ANY SPECIAL, INCIDENTAL, INDIRECT,
- * CONSEQUENTIAL, PUNITIVE OR EXEMPLARY DAMAGES, ARISING OUT OF OR IN
- * CONNECTION WITH THIS LICENCE, THE SOFTWARE OR THE USE OF OR OTHER
- * DEALINGS WITH THE SOFTWARE, EVEN IF NATIONAL ICT AUSTRALIA OR ITS
- * CONTRIBUTORS HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH CLAIM, LOSS,
- * DAMAGES OR OTHER LIABILITY.
- *
- * If applicable legislation implies representations, warranties, or
- * conditions, or imposes obligations or liability on University of New South
- * Wales or one of its contributors in respect of the Software that
- * cannot be wholly or partly excluded, restricted or modified, the
- * liability of University of New South Wales or the contributor is limited, to
- * the full extent permitted by the applicable legislation, at its
- * option, to:
- * a.  in the case of goods, any one or more of the following:
- * i.  the replacement of the goods or the supply of equivalent goods;
- * ii.  the repair of the goods;
- * iii. the payment of the cost of replacing the goods or of acquiring
- *  equivalent goods;
- * iv.  the payment of the cost of having the goods repaired; or
- * b.  in the case of services:
- * i.  the supplying of the services again; or
- * ii.  the payment of the cost of having the services supplied again.
- *
- * The construction, validity and performance of this licence is governed
- * by the laws in force in New South Wales, Australia.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
+
 #include <elf.h>
 #include <elf32.h>
+#include <elf64.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -140,6 +67,11 @@ elf_checkFile(elf_t* elfFile) {
     return 0;
   }
 
+  res = elf64_checkFile(elfFile);
+  if (res == 0) {
+    return 0;
+  }
+
   return -1;
 }
 
@@ -148,7 +80,7 @@ elf_checkProgramHeaderTable(elf_t* elfFile) {
   if (elf_isElf32(elfFile)) {
     return elf32_checkProgramHeaderTable(elfFile);
   } else {
-    return 0;
+    return elf64_checkProgramHeaderTable(elfFile);
   }
 }
 
@@ -157,7 +89,7 @@ elf_checkSectionTable(elf_t* elfFile) {
   if (elf_isElf32(elfFile)) {
     return elf32_checkSectionTable(elfFile);
   } else {
-    return 0;
+    return elf64_checkSectionTable(elfFile);
   }
 }
 
@@ -166,7 +98,7 @@ elf_getEntryPoint(elf_t* elfFile) {
   if (elf_isElf32(elfFile)) {
     return elf32_getEntryPoint(elfFile);
   } else {
-    return 0;
+    return elf64_getEntryPoint(elfFile);
   }
 }
 
@@ -175,7 +107,7 @@ elf_getNumProgramHeaders(elf_t* elfFile) {
   if (elf_isElf32(elfFile)) {
     return elf32_getNumProgramHeaders(elfFile);
   } else {
-    return 0;
+    return elf64_getNumProgramHeaders(elfFile);
   }
 }
 
@@ -184,7 +116,7 @@ elf_getNumSections(elf_t* elfFile) {
   if (elf_isElf32(elfFile)) {
     return elf32_getNumSections(elfFile);
   } else {
-    return 0;
+    return elf64_getNumSections(elfFile);
   }
 }
 
@@ -193,7 +125,7 @@ elf_getSectionStringTableIndex(elf_t* elf) {
   if (elf_isElf32(elf)) {
     return elf32_getSectionStringTableIndex(elf);
   } else {
-    return 0;
+    return elf64_getSectionStringTableIndex(elf);
   }
 }
 
@@ -277,7 +209,7 @@ elf_getSectionNameOffset(elf_t* elfFile, size_t i) {
   if (elf_isElf32(elfFile)) {
     return elf32_getSectionNameOffset(elfFile, i);
   } else {
-    return 0;
+    return elf64_getSectionNameOffset(elfFile, i);
   }
 }
 
@@ -286,7 +218,7 @@ elf_getSectionType(elf_t* elfFile, size_t i) {
   if (elf_isElf32(elfFile)) {
     return elf32_getSectionType(elfFile, i);
   } else {
-    return 0;
+    return elf64_getSectionType(elfFile, i);
   }
 }
 
@@ -295,7 +227,7 @@ elf_getSectionFlags(elf_t* elfFile, size_t i) {
   if (elf_isElf32(elfFile)) {
     return elf32_getSectionFlags(elfFile, i);
   } else {
-    return 0;
+    return elf64_getSectionFlags(elfFile, i);
   }
 }
 
@@ -304,7 +236,7 @@ elf_getSectionAddr(elf_t* elfFile, size_t i) {
   if (elf_isElf32(elfFile)) {
     return elf32_getSectionAddr(elfFile, i);
   } else {
-    return 0;
+    return elf64_getSectionAddr(elfFile, i);
   }
 }
 
@@ -313,7 +245,7 @@ elf_getSectionOffset(elf_t* elfFile, size_t i) {
   if (elf_isElf32(elfFile)) {
     return elf32_getSectionOffset(elfFile, i);
   } else {
-    return 0;
+    return elf64_getSectionOffset(elfFile, i);
   }
 }
 
@@ -322,7 +254,7 @@ elf_getSectionSize(elf_t* elfFile, size_t i) {
   if (elf_isElf32(elfFile)) {
     return elf32_getSectionSize(elfFile, i);
   } else {
-    return 0;
+    return elf64_getSectionSize(elfFile, i);
   }
 }
 
@@ -331,7 +263,7 @@ elf_getSectionLink(elf_t* elfFile, size_t i) {
   if (elf_isElf32(elfFile)) {
     return elf32_getSectionLink(elfFile, i);
   } else {
-    return 0;
+    return elf64_getSectionLink(elfFile, i);
   }
 }
 
@@ -340,7 +272,7 @@ elf_getSectionInfo(elf_t* elfFile, size_t i) {
   if (elf_isElf32(elfFile)) {
     return elf32_getSectionInfo(elfFile, i);
   } else {
-    return 0;
+    return elf64_getSectionInfo(elfFile, i);
   }
 }
 
@@ -349,7 +281,7 @@ elf_getSectionAddrAlign(elf_t* elfFile, size_t i) {
   if (elf_isElf32(elfFile)) {
     return elf32_getSectionAddrAlign(elfFile, i);
   } else {
-    return 0;
+    return elf64_getSectionAddrAlign(elfFile, i);
   }
 }
 
@@ -358,7 +290,7 @@ elf_getSectionEntrySize(elf_t* elfFile, size_t i) {
   if (elf_isElf32(elfFile)) {
     return elf32_getSectionEntrySize(elfFile, i);
   } else {
-    return 0;
+    return elf64_getSectionEntrySize(elfFile, i);
   }
 }
 
@@ -381,7 +313,7 @@ elf_getProgramHeaderType(elf_t* elfFile, size_t ph) {
   if (elf_isElf32(elfFile)) {
     return elf32_getProgramHeaderType(elfFile, ph);
   } else {
-    return 0;
+    return elf64_getProgramHeaderType(elfFile, ph);
   }
 }
 
@@ -390,7 +322,7 @@ elf_getProgramHeaderOffset(elf_t* elfFile, size_t ph) {
   if (elf_isElf32(elfFile)) {
     return elf32_getProgramHeaderOffset(elfFile, ph);
   } else {
-    return 0;
+    return elf64_getProgramHeaderOffset(elfFile, ph);
   }
 }
 
@@ -399,7 +331,7 @@ elf_getProgramHeaderVaddr(elf_t* elfFile, size_t ph) {
   if (elf_isElf32(elfFile)) {
     return elf32_getProgramHeaderVaddr(elfFile, ph);
   } else {
-    return 0;
+    return elf64_getProgramHeaderVaddr(elfFile, ph);
   }
 }
 
@@ -408,7 +340,7 @@ elf_getProgramHeaderPaddr(elf_t* elfFile, size_t ph) {
   if (elf_isElf32(elfFile)) {
     return elf32_getProgramHeaderPaddr(elfFile, ph);
   } else {
-    return 0;
+    return elf64_getProgramHeaderPaddr(elfFile, ph);
   }
 }
 
@@ -417,7 +349,7 @@ elf_getProgramHeaderFileSize(elf_t* elfFile, size_t ph) {
   if (elf_isElf32(elfFile)) {
     return elf32_getProgramHeaderFileSize(elfFile, ph);
   } else {
-    return 0;
+    return elf64_getProgramHeaderFileSize(elfFile, ph);
   }
 }
 
@@ -426,7 +358,7 @@ elf_getProgramHeaderMemorySize(elf_t* elfFile, size_t ph) {
   if (elf_isElf32(elfFile)) {
     return elf32_getProgramHeaderMemorySize(elfFile, ph);
   } else {
-    return 0;
+    return elf64_getProgramHeaderMemorySize(elfFile, ph);
   }
 }
 
@@ -435,7 +367,7 @@ elf_getProgramHeaderFlags(elf_t* elfFile, size_t ph) {
   if (elf_isElf32(elfFile)) {
     return elf32_getProgramHeaderFlags(elfFile, ph);
   } else {
-    return 0;
+    return elf64_getProgramHeaderFlags(elfFile, ph);
   }
 }
 
@@ -444,7 +376,7 @@ elf_getProgramHeaderAlign(elf_t* elfFile, size_t ph) {
   if (elf_isElf32(elfFile)) {
     return elf32_getProgramHeaderAlign(elfFile, ph);
   } else {
-    return 0;
+    return elf64_getProgramHeaderAlign(elfFile, ph);
   }
 }
 
