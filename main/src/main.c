@@ -178,7 +178,9 @@ int main(void)
     xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 25, &driver);
 #endif
 
-    xTaskCreate(vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void *)uart, 1, &taskCLI);
+    BaseType_t bt = xTaskCreate(vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void *)uart, 2, &taskCLI);
+
+    printf("cli %i", bt);
 
     /* Register commands with the FreeRTOS+CLI command interpreter. */
     vRegisterCLICommands();
@@ -200,7 +202,7 @@ int main(void)
 
 static void taskTestFn1(void *pvParameters)
 {
-    printf("Your number is: %i\n", (int)pvParameters);
+    printf("Your number is: %p\n", pvParameters);
 
     int x;
 
