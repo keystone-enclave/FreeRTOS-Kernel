@@ -468,7 +468,9 @@ static void agent_task(void *pvParameters)
         }
         if (i % 10 == 0)
         {
+ #ifdef DEBUG
             printf("Episode: %d, Steps taken: %d, Reward: %d\n", i, j, rewards_current_episode);
+ #endif
         }
     }
 

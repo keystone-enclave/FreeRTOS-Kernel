@@ -8,7 +8,7 @@
 // #define TASK_REGISTER_ALL
 
 /* Enclave Agent <-> Enclave Driver*/
-#define EA_ED_RL
+// #define EA_ED_RL
 
 /* Task Agent <-> Task Driver*/
 // #define TA_TD_RL
@@ -17,7 +17,7 @@
 // #define EA_TD_RL
 
 /* Task Agent <-> Enclave Driver*/
-// #define TA_ED_RL
+#define TA_ED_RL
 
 
 #ifdef EA_ED_RL
