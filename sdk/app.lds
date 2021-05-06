@@ -26,8 +26,11 @@ SECTIONS
 
   . = ALIGN(0x1000);
 
-  .heap : {
-      *(.malloc_zone*)
+    .malloc_zone :
+  {
+    __malloc_start = .;
+    . = . + (32*4096);
+    __malloc_zone_stop = .;
   }
   
   . = ALIGN(0x1000);

@@ -52,8 +52,8 @@ set(FILES ${FILES} ${LINK_FILES_PATH}/rtos_simulator.S)
 file (WRITE ${LINK_FILES_PATH}/rtos_simulator.S ".section .simulator\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/rtos_simulator\" ")
 set(TEST_NAMES ${TEST_NAMES} rtos_simulator)
 
-set(RV8 OFF CACHE BOOL "Enable RV8 build sdk.")
-if (RV8)
+# set(RV8 OFF CACHE BOOL "Enable RV8 build sdk.")
+# if (RV8)
 add_executable(aes rv8/aes/aes.c ${LIB_SOURCE_FILES})
 set_target_properties(aes PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
 set_target_properties(aes PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
@@ -109,10 +109,12 @@ install(TARGETS sha512 DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 set(FILES ${FILES} ${LINK_FILES_PATH}/sha512.S)
 file (WRITE ${LINK_FILES_PATH}/sha512.S ".section .sha512\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/sha512\" ")
 set(TEST_NAMES ${TEST_NAMES} sha512)
-endif()
+# endif()
 
 
 # set(FILES ${LINK_FILES_PATH}/aes.S ${LINK_FILES_PATH}/dhrystone.S ${LINK_FILES_PATH}/miniz.S ${LINK_FILES_PATH}/norx.S ${LINK_FILES_PATH}/primes.S ${LINK_FILES_PATH}/qsort.S ${LINK_FILES_PATH}/sha512.S ${LINK_FILES_PATH}/rtos_fibonacci.S ${LINK_FILES_PATH}/rtos_attest.S ${LINK_FILES_PATH}/rtos_agent.S ${LINK_FILES_PATH}/rtos_simulator.S)
+
+set(FILES ${LINK_FILES_PATH}/aes.S ${LINK_FILES_PATH}/dhrystone.S ${LINK_FILES_PATH}/miniz.S ${LINK_FILES_PATH}/norx.S ${LINK_FILES_PATH}/primes.S ${LINK_FILES_PATH}/qsort.S ${LINK_FILES_PATH}/sha512.S ${LINK_FILES_PATH}/rtos_fibonacci.S ${LINK_FILES_PATH}/rtos_attest.S ${LINK_FILES_PATH}/rtos_agent.S ${LINK_FILES_PATH}/rtos_simulator.S)
 
 
 # These are required variables

@@ -17,7 +17,9 @@
 // #define EA_TD_RL
 
 /* Task Agent <-> Enclave Driver*/
-#define TA_ED_RL
+// #define TA_ED_RL
+
+#define RV8
 
 
 #ifdef EA_ED_RL

@@ -50,6 +50,10 @@ static void driver_task(void *pvParameters);
 
 TaskHandle_t taskCLI = 0;
 
+#ifdef RV8
+TaskHandle_t enclave_rv8 = 0;
+#endif
+
 #ifdef ENCLAVE
 TaskHandle_t enclave1 = 0;
 TaskHandle_t enclave2 = 0;
@@ -97,6 +101,18 @@ int main(void)
 #ifdef TEST
     xTaskCreate(taskTestFn1, "task1", configMINIMAL_STACK_SIZE, (void *)5, 25, &taskTest1);
     xTaskCreate(taskTestFn2, "task2", configMINIMAL_STACK_SIZE, NULL, 28, &taskTest2);
+#endif
+
+#ifdef RV8
+    extern char *_rv8_start;
+    extern char *_rv8_end;
+    size_t elf_size_rv8 = (char *)&_rv8_end - (char *)&_rv8_start;
+
+    printf("RV8 Test at 0x%p-0x%p!\n", &_rv8_start, &_rv8_end);
+    xTaskCreateEnclave((uintptr_t)&_rv8_start, elf_size_rv8, "rv8", 30, NULL, &enclave_rv8);
+
+
+
 #endif
 
 #ifdef ENCLAVE

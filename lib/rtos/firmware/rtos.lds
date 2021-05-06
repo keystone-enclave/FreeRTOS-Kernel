@@ -60,7 +60,14 @@ SECTIONS
   PROVIDE(rtos_end = .);
   . = ALIGN(0x1000);
 
-  .fibonacci : {
+  .rv8 : {
+     _rv8_start = .; 
+    *(.aes*)  
+    . = ALIGN(0x1000);
+    _rv8_end = .; 
+  }
+
+/*  .fibonacci : {
     _task_1_start = .; 
     *(.fibonacci*)  
     . = ALIGN(0x1000);
@@ -87,6 +94,6 @@ SECTIONS
     *(.simulator*)  
     . = ALIGN(0x1000);
     _simulator_end = .; 
-  }  
+  }  */
 
 }
