@@ -72,7 +72,7 @@ set(TEST_NAMES ${TEST_NAMES} dhrystone)
 
 add_executable(miniz rv8/miniz/miniz.c ${LIB_SOURCE_FILES})
 set_target_properties(miniz PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
-set_target_properties(miniz PROPERTIES COMPILE_FLAGS "-Wall -O0 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+set_target_properties(miniz PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
 install(TARGETS miniz DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 set(FILES ${FILES} ${LINK_FILES_PATH}/miniz.S)
 file (WRITE ${LINK_FILES_PATH}/miniz.S ".section .miniz\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/miniz\" ")

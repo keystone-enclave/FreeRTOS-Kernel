@@ -517,7 +517,7 @@ void norx_task(void *pvParameters)
   vPortFree(ct);
   vPortFree(pt2);
 
-  st = get_cycles();
+  et = get_cycles();
   printf("iruntime %lu\r\n",et-st);
 
   return_general();

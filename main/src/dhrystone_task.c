@@ -449,14 +449,14 @@ boolean Func2(String30 StrParI1, String30 StrParI2);
 
 void dhrystone_task(void *pvParameters)
 {
-	printf("Dhrystone start\n");
+	printf("[dhrystone_task]\n");
   
    cycles_t st = get_cycles();
   cycles_t et = 0;
 
 
 	Proc0();
-          st = get_cycles();
+          et = get_cycles();
         printf("iruntime %lu\r\n",et-st);
 
 	return_general();
