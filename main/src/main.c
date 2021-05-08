@@ -25,6 +25,14 @@ extern uintptr_t __stack_top;
 extern uintptr_t __heap_base;
 extern void freertos_risc_v_trap_handler(void);
 
+extern void aes_task(void *pvParameters);
+extern void dhrystone_task(void *pvParameters);
+extern void miniz_task(void *pvParameters);
+extern void norx_task(void *pvParameters);
+extern void primes_task(void *pvParameters);
+extern void qsort_task(void *pvParameters);
+extern void sha512_task(void *pvParameters);
+
 uint8_t ucHeap[configTOTAL_HEAP_SIZE * 4] = {0};
 
 #ifdef TEST
@@ -36,6 +44,8 @@ static void taskTestFn2(void *pvParameters);
 #endif
 
 QueueHandle_t xQueue = 0;
+QueueHandle_t senderQueue = 0;
+QueueHandle_t receiverQueue = 0;
 
 #ifdef TA_TD_RL
 TaskHandle_t agent = 0;
@@ -194,6 +204,21 @@ int main(void)
     xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 25, &driver);
 #endif
 
+
+
+#ifdef MSG_TEST
+    senderQueue = xQueueCreate(10, sizeof(uintptr_t));
+    receiverQueue = xQueueCreate(10, sizeof(uintptr_t));
+#endif
+
+    xTaskCreate(aes_task, "aes", configMINIMAL_STACK_SIZE, NULL, 30, &taskCLI);
+    xTaskCreate(dhrystone_task, "dhrystone", configMINIMAL_STACK_SIZE, NULL, 29, &taskCLI);
+    xTaskCreate(miniz_task, "miniz", configMINIMAL_STACK_SIZE, NULL, 28, &taskCLI);
+    xTaskCreate(norx_task, "norx", configMINIMAL_STACK_SIZE, NULL, 27, &taskCLI);
+    xTaskCreate(primes_task, "primes", configMINIMAL_STACK_SIZE, NULL, 26, &taskCLI);
+    xTaskCreate(qsort_task, "qsort", configMINIMAL_STACK_SIZE, NULL, 25, &taskCLI);
+    xTaskCreate(sha512_task, "sha512", configMINIMAL_STACK_SIZE, NULL, 24, &taskCLI);
+
     BaseType_t bt = xTaskCreate(vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void *)uart, 2, &taskCLI);
 
     printf("cli %i", bt);
@@ -213,6 +238,34 @@ int main(void)
     }
     return 1;
 }
+
+#ifdef MSG_TEST
+static void sender_task(void *pvParameters)
+{
+    cycles_t msg_start = get_cycles();
+    cycles_t msg_end = 0;
+    int send_msg = 111;
+    int recv_msg = 123;
+
+    xQueueSend(receiverQueue, &send_msg, 100000);
+    xQueueReceive(senderQueue, &recv_msg, 100000);
+
+    msg_end = get_cycles();
+
+    printf("Task Latency: %lu", msg_end); 
+
+}
+
+static void receiver_task(void *pvParameters)
+{
+    int send_msg; 
+    int recv_msg = 123;
+
+    xQueueReceive(receiverQueue, &send_msg, 100000);
+    xQueueSend(senderQueue, &recv_msg, 100000);
+
+}
+#endif
 
 #ifdef TEST
 

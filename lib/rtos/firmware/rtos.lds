@@ -62,7 +62,7 @@ SECTIONS
 
   .rv8 : {
      _rv8_start = .; 
-    *(.aes*)  
+    *(.miniz*)  
     . = ALIGN(0x1000);
     _rv8_end = .; 
   }

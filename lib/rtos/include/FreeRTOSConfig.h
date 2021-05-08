@@ -36,8 +36,8 @@ your application. */
 /* Memory allocation related definitions. */
 #define configSUPPORT_STATIC_ALLOCATION         0
 #define configSUPPORT_DYNAMIC_ALLOCATION        1
-#define configTOTAL_HEAP_SIZE                   20240
-#define configAPPLICATION_ALLOCATED_HEAP        1
+#define configTOTAL_HEAP_SIZE                   (202400 + 319352)
+#define configAPPLICATION_ALLOCATED_HEAP        0
 
 /* Hook function related definitions. */
 #define configUSE_IDLE_HOOK                     0

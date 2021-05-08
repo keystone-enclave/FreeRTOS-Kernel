@@ -1,4 +1,3 @@
-
 #include <FreeRTOS.h>
 #include <task.h>
 #include <printf.h> 
@@ -11,11 +10,8 @@
 #include <string.h>
 #include <queue.h>
 #include <rl.h>
-
-#include "FreeRTOS_IO.h"
-#include "console.h"
-#include "commands.h"
-#include "devices.h"
+#include <rl_config.h>
+#include <timex.h>
 
 static unsigned long my_rand_state = 1;
 

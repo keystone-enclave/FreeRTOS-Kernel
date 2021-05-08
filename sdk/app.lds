@@ -29,7 +29,7 @@ SECTIONS
     .malloc_zone :
   {
     __malloc_start = .;
-    . = . + (32*4096);
+    . = . + (400352);
     __malloc_zone_stop = .;
   }
   

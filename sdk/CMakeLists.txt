@@ -78,6 +78,12 @@ set(FILES ${FILES} ${LINK_FILES_PATH}/miniz.S)
 file (WRITE ${LINK_FILES_PATH}/miniz.S ".section .miniz\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/miniz\" ")
 set(TEST_NAMES ${TEST_NAMES} miniz)
 
+add_executable(miniz_debug rv8/miniz/miniz.c ${LIB_SOURCE_FILES})
+set_target_properties(miniz_debug PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app_debug.lds")
+set_target_properties(miniz_debug PROPERTIES COMPILE_FLAGS "-Wall -O0 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+set(TEST_NAMES ${TEST_NAMES} miniz_debug)
+
+
 add_executable(norx rv8/norx/norx.c ${LIB_SOURCE_FILES})
 set_target_properties(norx PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
 set_target_properties(norx PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")

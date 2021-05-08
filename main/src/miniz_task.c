@@ -135,8 +135,8 @@
 /* Define MINIZ_NO_ZLIB_COMPATIBLE_NAME to disable zlib names, to prevent conflicts against stock zlib. */
 /*#define MINIZ_NO_ZLIB_COMPATIBLE_NAMES */
 
-/* Define MINIZ_NO_MALLOC to disable all calls to malloc, free, and realloc.
-   Note if MINIZ_NO_MALLOC is defined then the user must always provide custom user alloc/free/realloc
+/* Define MINIZ_NO_pvPortMalloc to disable all calls to pvPortMalloc, vPortFree, and realloc.
+   Note if MINIZ_NO_MALLOC is defined then the user must always provide custom user alloc/vPortFree/realloc
    callbacks to the zlib and archive API's, and a few stand-alone helper API's which don't provide custom user
    functions (such as tdefl_compress_mem_to_heap() and tinfl_decompress_mem_to_heap()) won't work. */
 /*#define MINIZ_NO_MALLOC */
@@ -148,9 +148,20 @@
 #define MINIZ_NO_TIME
 #endif
 
-#include <stddef.h>
-#include <printf.h>
-#include <eapp_utils.h>
+#include <FreeRTOS.h>
+#include <task.h>
+#include <printf.h> 
+#include <csr.h>
+#include <sbi.h>
+#include <syscall.h> 
+#include <enclave.h> 
+#include <elf.h> 
+#include <stdio.h>
+#include <string.h>
+#include <queue.h>
+#include <rl.h>
+#include <rl_config.h>
+#include <timex.h>
 
 #if !defined(MINIZ_NO_TIME) && !defined(MINIZ_NO_ARCHIVE_APIS)
 #include <time.h>
@@ -181,7 +192,7 @@
 /* For more compatibility with zlib, miniz.c uses unsigned long for some parameters/struct members. Beware: mz_ulong can be either 32 or 64-bits! */
 typedef unsigned long mz_ulong;
 
-/* mz_free() internally uses the MZ_FREE() macro (which by default calls free() unless you've modified the MZ_MALLOC macro) to release a block allocated from the heap. */
+/* mz_free() internally uses the MZ_FREE() macro (which by default calls vPortFree() unless you've modified the MZ_MALLOC macro) to release a block allocated from the heap. */
 void mz_free(void *p);
 
 #define MZ_ADLER32_INIT (1)
@@ -276,8 +287,8 @@ typedef struct mz_stream_s
     char *msg;                       /* error msg (unused) */
     struct mz_internal_state *state; /* internal state, allocated by zalloc/zfree */
 
-    mz_alloc_func zalloc; /* optional heap allocation function (defaults to malloc) */
-    mz_free_func zfree;   /* optional heap free function (defaults to free) */
+    mz_alloc_func zalloc; /* optional heap allocation function (defaults to pvPortMalloc) */
+    mz_free_func zfree;   /* optional heap vPortFree function (defaults to vPortFree) */
     void *opaque;         /* heap alloc function user pointer */
 
     int data_type;     /* data_type (unused) */
@@ -322,7 +333,7 @@ int mz_deflateReset(mz_streamp pStream);
 /*   MZ_STREAM_END if all input has been consumed and all output bytes have been written. Don't call mz_deflate() on the stream anymore. */
 /*   MZ_STREAM_ERROR if the stream is bogus. */
 /*   MZ_PARAM_ERROR if one of the parameters is invalid. */
-/*   MZ_BUF_ERROR if no forward progress is possible because the input and/or output buffers are empty. (Fill up the input buffer or free up some output space and try again.) */
+/*   MZ_BUF_ERROR if no forward progress is possible because the input and/or output buffers are empty. (Fill up the input buffer or vPortFree up some output space and try again.) */
 int mz_deflate(mz_streamp pStream, int flush);
 
 /* mz_deflateEnd() deinitializes a compressor: */
@@ -455,18 +466,36 @@ typedef void *const voidpc;
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
-#include "malloc.h"
 
 static unsigned long my_rand_state = 1;
 
-void srand(int i){
+void srand_miniz(int i){
     my_rand_state = i; 
 }
 
-long rand()
+long rand_miniz()
 {
     my_rand_state = (my_rand_state * 1103515245 + 12345) % 2147483648;
     return my_rand_state;
+}
+
+void *pvPortRealloc(void *mem, size_t newsize)
+{
+    if (newsize == 0) {
+        vPortFree(mem);
+        return NULL;
+    }
+
+    void *p;
+    p = pvPortMalloc(newsize);
+    if (p) {
+        /* zero the memory */
+        if (mem != NULL) {
+            memcpy(p, mem, newsize);
+            vPortFree(mem);
+        }
+    }
+    return p;
 }
 
 
@@ -516,9 +545,9 @@ typedef struct mz_dummy_time_t_tag
 #define MZ_FREE(x) (void)x, ((void)0)
 #define MZ_REALLOC(p, x) NULL
 #else
-#define MZ_MALLOC(x) malloc(x)
-#define MZ_FREE(x) free(x)
-#define MZ_REALLOC(p, x) realloc(p, x)
+#define MZ_MALLOC(x) pvPortMalloc(x)
+#define MZ_FREE(x) vPortFree(x)
+#define MZ_REALLOC(p, x) pvPortRealloc(p, x)
 #endif
 
 #define MZ_MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -586,14 +615,14 @@ enum
 };
 
 /* High level compression functions: */
-/* tdefl_compress_mem_to_heap() compresses a block in memory to a heap block allocated via malloc(). */
+/* tdefl_compress_mem_to_heap() compresses a block in memory to a heap block allocated via pvPortMalloc(). */
 /* On entry: */
 /*  pSrc_buf, src_buf_len: Pointer and size of source block to compress. */
 /*  flags: The max match finder probes (default is 128) logically OR'd against the above flags. Higher probes are slower but improve compression. */
 /* On return: */
 /*  Function returns a pointer to the compressed data, or NULL on failure. */
 /*  *pOut_len will be set to the compressed data's size, which could be larger than src_buf_len on uncompressible data. */
-/*  The caller must free() the returned block when it's no longer needed. */
+/*  The caller must vPortFree() the returned block when it's no longer needed. */
 void *tdefl_compress_mem_to_heap(const void *pSrc_buf, size_t src_buf_len, size_t *pOut_len, int flags);
 
 /* tdefl_compress_mem_to_mem() compresses a block in memory to another block in memory. */
@@ -745,7 +774,7 @@ enum
 };
 
 /* High level decompression functions: */
-/* tinfl_decompress_mem_to_heap() decompresses a block in memory to a heap block allocated via malloc(). */
+/* tinfl_decompress_mem_to_heap() decompresses a block in memory to a heap block allocated via pvPortMalloc(). */
 /* On entry: */
 /*  pSrc_buf, src_buf_len: Pointer and size of the Deflate or zlib source data to decompress. */
 /* On return: */
@@ -1265,7 +1294,7 @@ void *mz_zip_extract_archive_file_to_heap_v2(const char *pZip_filename, const ch
  * Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC
  * All Rights Reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * Permission is hereby granted, vPortFree of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
@@ -1827,9 +1856,9 @@ const char *mz_error(int err)
 #endif /*MINIZ_NO_ZLIB_APIS */
 
 /*
-  This is free and unencumbered software released into the public domain.
+  This is vPortFree and unencumbered software released into the public domain.
 
-  Anyone is free to copy, modify, publish, use, compile, sell, or
+  Anyone is vPortFree to copy, modify, publish, use, compile, sell, or
   distribute this software, either in source code form or as a compiled
   binary, for any purpose, commercial or non-commercial, and by any
   means.
@@ -1858,7 +1887,7 @@ const char *mz_error(int err)
  * Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC
  * All Rights Reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * Permission is hereby granted, vPortFree of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
@@ -3394,7 +3423,7 @@ void tdefl_compressor_free(tdefl_compressor *pComp)
  * Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC
  * All Rights Reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * Permission is hereby granted, vPortFree of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
@@ -4120,7 +4149,7 @@ void tinfl_decompressor_free(tinfl_decompressor *pDecomp)
  * Copyright 2016 Martin Raiber
  * All Rights Reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * Permission is hereby granted, vPortFree of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
@@ -8458,13 +8487,13 @@ mz_bool mz_zip_end(mz_zip_archive *pZip)
 #endif /*#ifndef MINIZ_NO_ARCHIVE_APIS*/
 
 // static const size_t DATA_SIZE = 8 * 1024 * 1024; 
-static const size_t DATA_SIZE = 1024; //32 * 1024;
+static const size_t DATA_SIZE = 8; //32 * 1024;
 
-void EAPP_ENTRY eapp_entry()
+void miniz_task(void *pvParameters)
 {
     printf("[miniz] Start\n");
-    uintptr_t cycles1,cycles2;
-  asm volatile ("rdcycle %0" : "=r" (cycles1));
+    cycles_t st = get_cycles();
+    cycles_t et = 0;
 
     uInt step = 0;
     int cmp_status;
@@ -8475,22 +8504,22 @@ void EAPP_ENTRY eapp_entry()
     uInt total_succeeded = 0;
 
     /* create test pattern */
-    pData = malloc(DATA_SIZE);
-    srand(0);
+    pData = pvPortMalloc(DATA_SIZE);
+    srand_miniz(0);
     for (size_t j = 0; j < DATA_SIZE; j+= sizeof(int)) {
-        pData[j] = rand();
+        pData[j] = rand_miniz();
     }
 
     printf("miniz.c version: %s\n", MZ_VERSION);
 
     // Allocate buffers to hold compressed and uncompressed data.
-    // pUncomp = (mz_uint8 *)malloc((size_t)src_len);
-    pCmp = (mz_uint8 *)malloc((size_t)cmp_len + 1024);
-    pUncomp = (mz_uint8 *)malloc((size_t)src_len);
+    // pUncomp = (mz_uint8 *)pvPortMalloc((size_t)src_len);
+    pCmp = (mz_uint8 *)pvPortMalloc((size_t)cmp_len + 1024);
+    pUncomp = (mz_uint8 *)pvPortMalloc((size_t)src_len);
     if ((!pCmp) || (!pUncomp))
     {
       printf("Out of memory!\n");
-      syscall_task_return();
+      return_general();
     }
 
     // Compress the string.
@@ -8498,9 +8527,9 @@ void EAPP_ENTRY eapp_entry()
     if (cmp_status != Z_OK)
     {
       printf("compress() failed!\n");
-      free(pCmp);
-      free(pUncomp);
-      syscall_task_return();
+      vPortFree(pCmp);
+      vPortFree(pUncomp);
+      return_general();
     }
 
     printf("Compressed from %u to %u bytes\n", (mz_uint32)src_len, (mz_uint32)cmp_len);
@@ -8508,11 +8537,11 @@ void EAPP_ENTRY eapp_entry()
     if (step)
     {
       // Purposely corrupt the compressed data if fuzzy testing (this is a very crude fuzzy test).
-      uInt n = 1 + (rand() % 3);
+      uInt n = 1 + (rand_miniz() % 3);
       while (n--)
       {
-        uInt i = rand() % cmp_len;
-        pCmp[i] ^= (rand() & 0xFF);
+        uInt i = rand_miniz() % cmp_len;
+        pCmp[i] ^= (rand_miniz() & 0xFF);
       }
     }
 
@@ -8529,8 +8558,8 @@ void EAPP_ENTRY eapp_entry()
       if (cmp_status != Z_OK)
       {
         printf("uncompress failed!\n");
-        free(pCmp);
-        free(pUncomp);
+        vPortFree(pCmp);
+        vPortFree(pUncomp);
         syscall_task_return();
       }
 
@@ -8540,21 +8569,21 @@ void EAPP_ENTRY eapp_entry()
       if ((uncomp_len != src_len) || (memcmp(pUncomp, pData, (size_t)src_len)))
       {
         printf("Decompression failed!\n");
-        free(pCmp);
-        free(pUncomp);
+        vPortFree(pCmp);
+        vPortFree(pUncomp);
         syscall_task_return();
       }
     }
 
-    free(pCmp);
-    free(pUncomp);
+    vPortFree(pCmp);
+    vPortFree(pUncomp);
 
     step++;
 
     printf("Success.\n");
 
-        asm volatile ("rdcycle %0" : "=r" (cycles2));
-        printf("iruntime %lu\r\n",cycles2-cycles1);
+        et = get_cycles();
+        printf("iruntime %lu\r\n",et-st);
 
-    syscall_task_return();
+    return_general();
 }
