@@ -273,17 +273,21 @@ int main(void)
 #ifdef MSG_TEST_ENCLAVE
 static void sender_task(void *pvParameters)
 {
-    #define DATA_SIZE 4
-    char send_buf[DATA_SIZE];
+    #define DATA_SIZE 512
+    char send_buf[DATA_SIZE] = "hello";
     char recv_buf[DATA_SIZE];
+
+    // int x = 3; 
+    // int y = 5; 
 
     cycles_t st = get_cycles();
     cycles_t et;
 
     sbi_send(1, send_buf, DATA_SIZE, YIELD); 
-    while(sbi_recv(1, recv_buf, DATA_SIZE, YIELD)) yield_general(); 
+    sbi_recv(1, recv_buf, DATA_SIZE, YIELD);
+    // while(sbi_recv(1, recv_buf, DATA_SIZE, YIELD)) yield_general(); 
     et = get_cycles();
-
+    printf("h ==? %c \n", recv_buf[0]); 
     printf("[msg-test-enclave] Duration: %lu\n", et -st);
     return_general();
 }
