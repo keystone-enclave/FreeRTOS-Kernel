@@ -90,10 +90,10 @@ SECTIONS
     *(.attest*)  
     . = ALIGN(0x1000);
     _task_2_end = .; 
-  }  
+  }  */
 
 
-    .agent : {
+  .agent : {
     _agent_start = .; 
     *(.agent*)  
     . = ALIGN(0x1000);
@@ -105,6 +105,6 @@ SECTIONS
     *(.simulator*)  
     . = ALIGN(0x1000);
     _simulator_end = .; 
-  }  */
+  } 
 
 }

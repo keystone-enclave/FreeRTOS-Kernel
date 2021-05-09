@@ -290,7 +290,7 @@ void step(struct probability_matrix_item *m_item, int action)
     curr_state = m_item->ctx.new_state;
     last_action = action;
 
-    //Do a dummy read to simulate writing to peripheral register
+    // //Do a dummy read to simulate writing to peripheral register
     dummy_peripheral[0] = 10; 
 
 #ifdef DEBUG
@@ -327,10 +327,11 @@ void EAPP_ENTRY eapp_entry(int AGENT_TID){
 
     while(1){
 
-        while(sbi_recv(AGENT_TID, &args, sizeof(struct send_action_args), YIELD));
-        
+        // while(sbi_recv(AGENT_TID, &args, sizeof(struct send_action_args), YIELD));
+        sbi_recv(AGENT_TID, &args, sizeof(struct send_action_args), YIELD);
         switch(args.msg_type){
             case RESET:
+                // printf("In reset!\n");
                 env_reset();
                 sbi_send(AGENT_TID, &reset_ack, sizeof(int), YIELD);
                 break;

@@ -224,7 +224,7 @@ int main(void)
     extern char *_receiver_end;
 
     size_t elf_size_4 = (char *)&_receiver_end - (char *)&_receiver_start;
-     printf("Receiver at 0x%p-0x%p!\n", &_receiver_start, &_receiver_end);
+    printf("Receiver at 0x%p-0x%p!\n", &_receiver_start, &_receiver_end);
     
     xTaskCreate(sender_task, "sender", configMINIMAL_STACK_SIZE * 6, NULL, 30, &task_sender);
     xTaskCreateEnclave((uintptr_t)&_receiver_start, elf_size_4, "receiver", 30, (void *const)0, &enclave_receiver);
@@ -373,13 +373,14 @@ void eapp_send_env_reset()
     args.msg_type = RESET;
     sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 
-    int recv_msg = sbi_recv(DRIVER_TID, &reset_ack, sizeof(int), YIELD);
+    // int recv_msg = 
+    sbi_recv(DRIVER_TID, &reset_ack, sizeof(int), YIELD);
 
-    while (recv_msg)
-    {
-        yield_general(); 
-        recv_msg = sbi_recv(DRIVER_TID, &reset_ack, sizeof(int), YIELD);
-    }
+    // while (recv_msg)
+    // {
+    //     yield_general(); 
+    //     recv_msg = sbi_recv(DRIVER_TID, &reset_ack, sizeof(int), YIELD);
+    // }
 }
 
 void eapp_send_env_step(struct probability_matrix_item *next, int action)
@@ -388,18 +389,20 @@ void eapp_send_env_step(struct probability_matrix_item *next, int action)
     struct ctx ctx_buf; 
     args.action = action;
     args.msg_type = STEP;
-
+    // printf("[eapp_send_env_step]\n");
     sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+    sbi_recv(DRIVER_TID, &ctx_buf, sizeof(struct ctx), YIELD);
 
-    while (sbi_recv(DRIVER_TID, &ctx_buf, sizeof(struct ctx), YIELD))
-    {
-        yield_general();
-    }
+    // while (sbi_recv(DRIVER_TID, &ctx_buf, sizeof(struct ctx), YIELD))
+    // {
+    //     yield_general();
+    // }
 
     next->ctx.done = ctx_buf.done;
     next->ctx.new_state = ctx_buf.new_state;
     next->ctx.reward = ctx_buf.reward;
 }
+
 static void agent_task(void *pvParameters)
 {
     cycles_t st = get_cycles();
