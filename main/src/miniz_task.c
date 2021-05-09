@@ -804,7 +804,8 @@ tinfl_decompressor *tinfl_decompressor_alloc();
 void tinfl_decompressor_free(tinfl_decompressor *pDecomp);
 
 /* Max size of LZ dictionary. */
-#define TINFL_LZ_DICT_SIZE 32768
+#define TINFL_LZ_DICT_SIZE (8 * 1024)
+//32768
 
 /* Return status. */
 typedef enum {
@@ -8487,7 +8488,7 @@ mz_bool mz_zip_end(mz_zip_archive *pZip)
 #endif /*#ifndef MINIZ_NO_ARCHIVE_APIS*/
 
 // static const size_t DATA_SIZE = 8 * 1024 * 1024; 
-static const size_t DATA_SIZE = 8; //32 * 1024;
+static const size_t DATA_SIZE = 1024; //32 * 1024;
 
 void miniz_task(void *pvParameters)
 {

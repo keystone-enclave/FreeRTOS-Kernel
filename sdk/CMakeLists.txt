@@ -115,12 +115,29 @@ install(TARGETS sha512 DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 set(FILES ${FILES} ${LINK_FILES_PATH}/sha512.S)
 file (WRITE ${LINK_FILES_PATH}/sha512.S ".section .sha512\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/sha512\" ")
 set(TEST_NAMES ${TEST_NAMES} sha512)
+
+add_executable(sender sender/sender.c ${LIB_SOURCE_FILES})
+set_target_properties(sender PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
+set_target_properties(sender PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+install(TARGETS sender DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+set(FILES ${FILES} ${LINK_FILES_PATH}/sender.S)
+file (WRITE ${LINK_FILES_PATH}/sender.S ".section .sender\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/sender\" ")
+set(TEST_NAMES ${TEST_NAMES} sender)
+
+add_executable(receiver receiver/receiver.c ${LIB_SOURCE_FILES})
+set_target_properties(receiver PROPERTIES LINK_FLAGS "-static -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/app.lds")
+set_target_properties(receiver PROPERTIES COMPILE_FLAGS "-Wall -O3 -Werror -fPIC -fno-builtin -g -fcommon -fno-zero-initialized-in-bss")
+install(TARGETS receiver DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+set(FILES ${FILES} ${LINK_FILES_PATH}/receiver.S)
+file (WRITE ${LINK_FILES_PATH}/receiver.S ".section .receiver\n    .incbin \"${EXECUTABLE_OUTPUT_PATH}/receiver\" ")
+set(TEST_NAMES ${TEST_NAMES} receiver)
+
 # endif()
 
 
 # set(FILES ${LINK_FILES_PATH}/aes.S ${LINK_FILES_PATH}/dhrystone.S ${LINK_FILES_PATH}/miniz.S ${LINK_FILES_PATH}/norx.S ${LINK_FILES_PATH}/primes.S ${LINK_FILES_PATH}/qsort.S ${LINK_FILES_PATH}/sha512.S ${LINK_FILES_PATH}/rtos_fibonacci.S ${LINK_FILES_PATH}/rtos_attest.S ${LINK_FILES_PATH}/rtos_agent.S ${LINK_FILES_PATH}/rtos_simulator.S)
 
-set(FILES ${LINK_FILES_PATH}/aes.S ${LINK_FILES_PATH}/dhrystone.S ${LINK_FILES_PATH}/miniz.S ${LINK_FILES_PATH}/norx.S ${LINK_FILES_PATH}/primes.S ${LINK_FILES_PATH}/qsort.S ${LINK_FILES_PATH}/sha512.S ${LINK_FILES_PATH}/rtos_fibonacci.S ${LINK_FILES_PATH}/rtos_attest.S ${LINK_FILES_PATH}/rtos_agent.S ${LINK_FILES_PATH}/rtos_simulator.S)
+set(FILES ${LINK_FILES_PATH}/sender.S ${LINK_FILES_PATH}/receiver.S ${LINK_FILES_PATH}/aes.S ${LINK_FILES_PATH}/dhrystone.S ${LINK_FILES_PATH}/miniz.S ${LINK_FILES_PATH}/norx.S ${LINK_FILES_PATH}/primes.S ${LINK_FILES_PATH}/qsort.S ${LINK_FILES_PATH}/sha512.S ${LINK_FILES_PATH}/rtos_fibonacci.S ${LINK_FILES_PATH}/rtos_attest.S ${LINK_FILES_PATH}/rtos_agent.S ${LINK_FILES_PATH}/rtos_simulator.S)
 
 
 # These are required variables

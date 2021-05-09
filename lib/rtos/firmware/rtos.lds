@@ -55,17 +55,28 @@ SECTIONS
     __stack_top = .;
     _sp = .;
     __freertos_irq_stack_top = .;
+    . += 0x8000;
   }
   _rtos_end = .; 
   PROVIDE(rtos_end = .);
   . = ALIGN(0x1000);
 
-  .rv8 : {
+  . += 0x8000;
+
+  .receiver : {
+    _receiver_start = .; 
+    *(.receiver*)  
+    . = ALIGN(0x1000);
+    _receiver_end = .; 
+  } 
+
+
+ /* .rv8 : {
      _rv8_start = .; 
     *(.miniz*)  
     . = ALIGN(0x1000);
     _rv8_end = .; 
-  }
+  } */
 
 /*  .fibonacci : {
     _task_1_start = .; 

@@ -114,3 +114,88 @@ void send_env_step(QueueHandle_t send_queue, QueueHandle_t recv_queue, struct pr
     next->ctx.reward = ctx_buf->reward;
 }
 
+#ifdef TA_TD_RL
+static void agent_task(void *pvParameters)
+{
+    cycles_t st = get_cycles();
+    printf("Agent Start Time: %u\n", st);
+    printf("Enter Agent\n");
+
+    int action;
+    int state;
+    int new_state;
+    int reward;
+    int done;
+    int rewards_current_episode = 0;
+    struct probability_matrix_item next;
+    double q_table[Q_STATE][N_ACTION] = {0};
+    double e_greedy = E_GREEDY;
+
+    int i, j;
+    for (i = 0; i < NUM_EPISODES; i++)
+    {
+
+        done = FALSE;
+        rewards_current_episode = 0;
+        state = 0;
+
+        send_env_reset(xDriverQueue, xAgentQueue);
+
+        for (j = 0; j < STEPS_PER_EP; j++)
+        {
+
+            float random_f = (float)rand() / (float)(RAND_MAX / 1.0);
+
+            if (random_f > e_greedy)
+            {
+                action = max_action(q_table[state]);
+            }
+            else
+            {
+                action = rand() % 4;
+            }
+
+            send_env_step(xDriverQueue, xAgentQueue, &next, action);
+
+            new_state = next.ctx.new_state;
+            reward = next.ctx.reward;
+            done = next.ctx.done;
+
+            q_table[state][action] = q_table[state][action] * (1.0 - LEARN_RATE) + LEARN_RATE * (reward + DISCOUNT * max(q_table[new_state]));
+
+            state = new_state;
+            rewards_current_episode += reward;
+
+            if (done == TRUE)
+            {
+
+                if (reward == 1)
+                {
+                    if (e_greedy > E_GREEDY_F)
+                        e_greedy *= E_GREEDY_DECAY;
+#ifdef DEBUG
+                    printf("You reached the goal!\n");
+#endif
+                }
+                else
+                {
+#ifdef DEBUG
+                    printf("You fell in a hole!\n");
+#endif
+                }
+                break;
+            }
+        }
+        if (i % 10 == 0)
+        {
+            printf("Episode: %d, Steps taken: %d, Reward: %d\n", i, j, rewards_current_episode);
+        }
+    }
+
+    send_finish(xDriverQueue);
+    cycles_t et = get_cycles();
+    printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
+    return_general();
+}
+
+#endif

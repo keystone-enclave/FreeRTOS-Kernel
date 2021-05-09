@@ -1097,7 +1097,7 @@ void aes_encrypt_deinit(void *ctx)
 
 void EAPP_ENTRY eapp_entry()
 {
-  printf("[aes]\n");
+  printf("[aes-enclave]\n");
   static const size_t DATA_SIZE = 32 * 1024; 
   printf("DATA_SIZE: %d\n", DATA_SIZE);
   unsigned long long cycles1,cycles2;

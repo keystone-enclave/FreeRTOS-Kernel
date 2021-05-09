@@ -21,7 +21,8 @@
 
 // #define RV8
 
-// #define MSG_TEST
+// #define MSG_TEST_TASK
+#define MSG_TEST_ENCLAVE
 
 
 #ifdef EA_ED_RL

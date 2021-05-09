@@ -1105,14 +1105,12 @@ void aes_encrypt_deinit(void *ctx)
 
 void aes_task(void *pvParameters)
 {
-  printf("[aes]\n");
+  printf("[aes-task]\n");
   static const size_t DATA_SIZE = 32 * 1024; 
   printf("DATA_SIZE: %d\n", DATA_SIZE);
 
   cycles_t st = get_cycles();
   cycles_t et = 0;
-
-  st = get_cycles();
 
   static const u8 key[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F };
 	// static const size_t DATA_SIZE = 32 * 1024 * 1024;

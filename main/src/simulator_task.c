@@ -326,3 +326,42 @@ void step(struct probability_matrix_item *m_item, int action)
     printf("\n");
 #endif
 }
+
+#ifdef TA_TD_RL
+static void driver_task(void *pvParameters)
+{
+    printf("Enter Simulator\n");
+    env_setup();
+    struct send_action_args *args;
+    struct probability_matrix_item p_item;
+    struct ctx *ctx = &p_item.ctx;
+    int reset_ack = 1; 
+
+
+    while (1)
+    {
+        xQueueReceive(xDriverQueue, &args, QUEUE_MAX_DELAY);
+
+        switch (args->msg_type)
+        {
+        case RESET:
+            env_reset();
+            xQueueSend(xAgentQueue, &reset_ack, QUEUE_MAX_DELAY);
+            break;
+        case STEP:
+            step(&p_item, args->action);
+            xQueueSend(xAgentQueue, &ctx, QUEUE_MAX_DELAY);
+            break;
+        case FINISH:
+            goto done;
+            break;
+        default:
+            //    printf("Invalid message type!\n");
+            break;
+        }
+    }
+
+done:
+    return_general();
+}
+#endif

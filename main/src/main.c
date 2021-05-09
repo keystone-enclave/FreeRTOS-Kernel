@@ -47,6 +47,16 @@ QueueHandle_t xQueue = 0;
 QueueHandle_t senderQueue = 0;
 QueueHandle_t receiverQueue = 0;
 
+#ifdef MSG_TEST_ENCLAVE
+static void sender_task(void *pvParameters);
+#endif
+
+#ifdef MSG_TEST_TASK
+static void sender_fn(void *pvParameters);
+static void receiver_fn(void *pvParameters);
+#endif
+
+
 #ifdef TA_TD_RL
 TaskHandle_t agent = 0;
 TaskHandle_t driver = 0;
@@ -204,20 +214,41 @@ int main(void)
     xTaskCreate(driver_task, "driver", configMINIMAL_STACK_SIZE * 4, NULL, 25, &driver);
 #endif
 
+#ifdef MSG_TEST_ENCLAVE
+    printf("Running Message Enclave Test...\n");
 
+    TaskHandle_t enclave_receiver = 0;
+    TaskHandle_t task_sender;
 
-#ifdef MSG_TEST
-    senderQueue = xQueueCreate(10, sizeof(uintptr_t));
-    receiverQueue = xQueueCreate(10, sizeof(uintptr_t));
+    extern char *_receiver_start;
+    extern char *_receiver_end;
+
+    size_t elf_size_4 = (char *)&_receiver_end - (char *)&_receiver_start;
+     printf("Receiver at 0x%p-0x%p!\n", &_receiver_start, &_receiver_end);
+    
+    xTaskCreate(sender_task, "sender", configMINIMAL_STACK_SIZE * 6, NULL, 30, &task_sender);
+    xTaskCreateEnclave((uintptr_t)&_receiver_start, elf_size_4, "receiver", 30, (void *const)0, &enclave_receiver);
+
 #endif
 
-    xTaskCreate(aes_task, "aes", configMINIMAL_STACK_SIZE, NULL, 30, &taskCLI);
-    xTaskCreate(dhrystone_task, "dhrystone", configMINIMAL_STACK_SIZE, NULL, 29, &taskCLI);
-    xTaskCreate(miniz_task, "miniz", configMINIMAL_STACK_SIZE, NULL, 28, &taskCLI);
-    xTaskCreate(norx_task, "norx", configMINIMAL_STACK_SIZE, NULL, 27, &taskCLI);
-    xTaskCreate(primes_task, "primes", configMINIMAL_STACK_SIZE, NULL, 26, &taskCLI);
-    xTaskCreate(qsort_task, "qsort", configMINIMAL_STACK_SIZE, NULL, 25, &taskCLI);
-    xTaskCreate(sha512_task, "sha512", configMINIMAL_STACK_SIZE, NULL, 24, &taskCLI);
+#ifdef MSG_TEST_TASK
+    TaskHandle_t sender = 0;
+    TaskHandle_t receiver = 0;
+
+    senderQueue = xQueueCreate(10, sizeof(uintptr_t));
+    receiverQueue = xQueueCreate(10, sizeof(uintptr_t));
+
+    xTaskCreate(sender_fn, "sender", configMINIMAL_STACK_SIZE * 6, NULL, 25, &sender);
+    xTaskCreate(receiver_fn, "receiver", configMINIMAL_STACK_SIZE * 4, NULL, 25, &receiver);
+#endif
+
+    // xTaskCreate(aes_task, "aes", configMINIMAL_STACK_SIZE, NULL, 30, &taskCLI);
+    // xTaskCreate(dhrystone_task, "dhrystone", configMINIMAL_STACK_SIZE, NULL, 29, &taskCLI);
+    // xTaskCreate(miniz_task, "miniz", configMINIMAL_STACK_SIZE, NULL, 28, &taskCLI);
+    // xTaskCreate(norx_task, "norx", configMINIMAL_STACK_SIZE, NULL, 27, &taskCLI);
+    // xTaskCreate(primes_task, "primes", configMINIMAL_STACK_SIZE, NULL, 26, &taskCLI);
+    // xTaskCreate(qsort_task, "qsort", configMINIMAL_STACK_SIZE, NULL, 25, &taskCLI);
+    // xTaskCreate(sha512_task, "sha512", configMINIMAL_STACK_SIZE, NULL, 24, &taskCLI);
 
     BaseType_t bt = xTaskCreate(vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void *)uart, 2, &taskCLI);
 
@@ -239,8 +270,28 @@ int main(void)
     return 1;
 }
 
-#ifdef MSG_TEST
+#ifdef MSG_TEST_ENCLAVE
 static void sender_task(void *pvParameters)
+{
+    #define DATA_SIZE 4
+    char send_buf[DATA_SIZE];
+    char recv_buf[DATA_SIZE];
+
+    cycles_t st = get_cycles();
+    cycles_t et;
+
+    sbi_send(1, send_buf, DATA_SIZE, YIELD); 
+    while(sbi_recv(1, recv_buf, DATA_SIZE, YIELD)) yield_general(); 
+    et = get_cycles();
+
+    printf("[msg-test-enclave] Duration: %lu\n", et -st);
+    return_general();
+}
+#endif
+
+
+#ifdef MSG_TEST_TASK
+static void sender_fn(void *pvParameters)
 {
     cycles_t msg_start = get_cycles();
     cycles_t msg_end = 0;
@@ -252,18 +303,19 @@ static void sender_task(void *pvParameters)
 
     msg_end = get_cycles();
 
-    printf("Task Latency: %lu", msg_end); 
+    printf("[msg-test-task] Duration: %lu\n", msg_end - msg_start); 
+    return_general(); 
 
 }
 
-static void receiver_task(void *pvParameters)
+static void receiver_fn(void *pvParameters)
 {
     int send_msg; 
     int recv_msg = 123;
 
     xQueueReceive(receiverQueue, &send_msg, 100000);
     xQueueSend(senderQueue, &recv_msg, 100000);
-
+    return_general(); 
 }
 #endif
 
@@ -300,127 +352,6 @@ static void taskTestFn2(void *pvParameters)
 
 #endif
 
-#ifdef TA_TD_RL
-static void agent_task(void *pvParameters)
-{
-    cycles_t st = get_cycles();
-    printf("Agent Start Time: %u\n", st);
-    printf("Enter Agent\n");
-
-    int action;
-    int state;
-    int new_state;
-    int reward;
-    int done;
-    int rewards_current_episode = 0;
-    struct probability_matrix_item next;
-    double q_table[Q_STATE][N_ACTION] = {0};
-    double e_greedy = E_GREEDY;
-
-    int i, j;
-    for (i = 0; i < NUM_EPISODES; i++)
-    {
-
-        done = FALSE;
-        rewards_current_episode = 0;
-        state = 0;
-
-        send_env_reset(xDriverQueue, xAgentQueue);
-
-        for (j = 0; j < STEPS_PER_EP; j++)
-        {
-
-            float random_f = (float)rand() / (float)(RAND_MAX / 1.0);
-
-            if (random_f > e_greedy)
-            {
-                action = max_action(q_table[state]);
-            }
-            else
-            {
-                action = rand() % 4;
-            }
-
-            send_env_step(xDriverQueue, xAgentQueue, &next, action);
-
-            new_state = next.ctx.new_state;
-            reward = next.ctx.reward;
-            done = next.ctx.done;
-
-            q_table[state][action] = q_table[state][action] * (1.0 - LEARN_RATE) + LEARN_RATE * (reward + DISCOUNT * max(q_table[new_state]));
-
-            state = new_state;
-            rewards_current_episode += reward;
-
-            if (done == TRUE)
-            {
-
-                if (reward == 1)
-                {
-                    if (e_greedy > E_GREEDY_F)
-                        e_greedy *= E_GREEDY_DECAY;
-#ifdef DEBUG
-                    printf("You reached the goal!\n");
-#endif
-                }
-                else
-                {
-#ifdef DEBUG
-                    printf("You fell in a hole!\n");
-#endif
-                }
-                break;
-            }
-        }
-        if (i % 10 == 0)
-        {
-            printf("Episode: %d, Steps taken: %d, Reward: %d\n", i, j, rewards_current_episode);
-        }
-    }
-
-    send_finish(xDriverQueue);
-    cycles_t et = get_cycles();
-    printf("Agent End Time: %u\nAgent Duration: %u\n", et, et - st);
-    return_general();
-}
-
-static void driver_task(void *pvParameters)
-{
-    printf("Enter Simulator\n");
-    env_setup();
-    struct send_action_args *args;
-    struct probability_matrix_item p_item;
-    struct ctx *ctx = &p_item.ctx;
-    int reset_ack = 1; 
-
-
-    while (1)
-    {
-        xQueueReceive(xDriverQueue, &args, QUEUE_MAX_DELAY);
-
-        switch (args->msg_type)
-        {
-        case RESET:
-            env_reset();
-            xQueueSend(xAgentQueue, &reset_ack, QUEUE_MAX_DELAY);
-            break;
-        case STEP:
-            step(&p_item, args->action);
-            xQueueSend(xAgentQueue, &ctx, QUEUE_MAX_DELAY);
-            break;
-        case FINISH:
-            goto done;
-            break;
-        default:
-            //    printf("Invalid message type!\n");
-            break;
-        }
-    }
-
-done:
-    return_general();
-}
-#endif
 
 #ifdef TA_ED_RL
 void eapp_send_finish()
