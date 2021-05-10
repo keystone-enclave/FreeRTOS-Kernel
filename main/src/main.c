@@ -358,23 +358,40 @@ static void taskTestFn2(void *pvParameters)
 
 
 #ifdef TA_ED_RL
+
+extern char *_shared_buffer_start;
+extern char *_shared_buffer_end;
+uintptr_t shared_buf_rl =(uintptr_t) ((uintptr_t)&_shared_buffer_start + 32);
+uintptr_t shared_buf_agent =(uintptr_t) &_shared_buffer_start;
+
+
 void eapp_send_finish()
 {
-    struct send_action_args args;
-    args.msg_type = FINISH;
-    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+    // struct send_action_args args;
+    struct send_action_args *args = (struct send_action_args* ) shared_buf_agent;
+    args->msg_type = FINISH;
+    args->valid = 1; 
+    // sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
 }
 
 void eapp_send_env_reset()
 {
 
-    struct send_action_args args;
-    int reset_ack;
-    args.msg_type = RESET;
-    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+    // struct send_action_args args;
+    struct send_action_args *args = (struct send_action_args* ) shared_buf_agent;
+    // int *reset_ack = (int *) shared_buf_rl; 
 
+    args->msg_type = RESET;
+    args->valid = 1; 
+    // sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+    // printf("args->msg_type: %d\n",  args->msg_type);
     // int recv_msg = 
-    sbi_recv(DRIVER_TID, &reset_ack, sizeof(int), YIELD);
+    // sbi_recv(DRIVER_TID, &reset_ack, sizeof(int), YIELD);
+    sbi_recv(DRIVER_TID, 0, 0, YIELD);
+
+    // printf("reset_ack: %p, reset_ack: %d\n", reset_ack, *reset_ack);
+
+
 
     // while (recv_msg)
     // {
@@ -385,26 +402,37 @@ void eapp_send_env_reset()
 
 void eapp_send_env_step(struct probability_matrix_item *next, int action)
 {
-    struct send_action_args args;
-    struct ctx ctx_buf; 
-    args.action = action;
-    args.msg_type = STEP;
+    // struct send_action_args args;
+    struct send_action_args *args = (struct send_action_args* ) shared_buf_agent;
+    struct probability_matrix_item *p_item = (struct probability_matrix_item *) shared_buf_rl;
+    // int *reset_ack = (int *) shared_buf_rl; 
+
+
+    args->valid = 1; 
+    args->action = action;
+    args->msg_type = STEP;
     // printf("[eapp_send_env_step]\n");
-    sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
-    sbi_recv(DRIVER_TID, &ctx_buf, sizeof(struct ctx), YIELD);
+    // sbi_send(DRIVER_TID, &args, sizeof(struct send_action_args), YIELD);
+    // sbi_recv(DRIVER_TID, &ctx_buf, sizeof(struct ctx), YIELD);
+    // printf("action: %d!\n", args->action);
+    sbi_recv(DRIVER_TID, 0, 0, YIELD);
+
+    // printf("reset_ack: %p, reset_ack: %d\n", reset_ack, *reset_ack);
 
     // while (sbi_recv(DRIVER_TID, &ctx_buf, sizeof(struct ctx), YIELD))
     // {
     //     yield_general();
     // }
-
-    next->ctx.done = ctx_buf.done;
-    next->ctx.new_state = ctx_buf.new_state;
-    next->ctx.reward = ctx_buf.reward;
+    next->ctx.done = p_item->ctx.done;
+    next->ctx.new_state = p_item->ctx.new_state;
+    next->ctx.reward = p_item->ctx.reward;
 }
 
 static void agent_task(void *pvParameters)
 {
+    // printf("%p\n", (void *) &_shared_buffer_start);
+    memset(&_shared_buffer_start, 0, &_shared_buffer_end - &_shared_buffer_start);
+
     cycles_t st = get_cycles();
     printf("Agent Start Time: %u\n", st);
     printf("Enter Agent\n");
@@ -475,9 +503,9 @@ static void agent_task(void *pvParameters)
         }
         if (i % 10 == 0)
         {
- #ifdef DEBUG
+//  #ifdef DEBUG
             printf("Episode: %d, Steps taken: %d, Reward: %d\n", i, j, rewards_current_episode);
- #endif
+//  #endif
         }
     }
 

@@ -93,12 +93,19 @@ SECTIONS
   }  */
 
 
-  .agent : {
+  /*.agent : {
     _agent_start = .; 
     *(.agent*)  
     . = ALIGN(0x1000);
     _agent_end = .; 
-  }  
+  } */
+
+  .shared_buffer : {
+    _shared_buffer_start = .; 
+    . = . + 4096; 
+    . = ALIGN(0x1000);
+    _shared_buffer_end = .; 
+  } 
 
   .simulator : {
     _simulator_start = .; 

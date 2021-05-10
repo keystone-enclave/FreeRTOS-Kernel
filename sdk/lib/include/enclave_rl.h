@@ -84,6 +84,7 @@ struct probability_matrix_item
 };
 
 struct send_action_args {
+    int valid;
     int action; 
     int msg_type; 
 };

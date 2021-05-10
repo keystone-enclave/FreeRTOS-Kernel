@@ -317,27 +317,44 @@ void step(struct probability_matrix_item *m_item, int action)
 #endif
 }
 
+#define SHARED_BUF 0x8027E000
+
+uintptr_t shared_buf_rl = (uintptr_t) (SHARED_BUF + 32);
+uintptr_t shared_buf_agent = (uintptr_t) SHARED_BUF;
+
 void EAPP_ENTRY eapp_entry(int AGENT_TID){
     printf("Enter Simulator\n");
 
     env_setup();
-    struct send_action_args args;
-    struct probability_matrix_item p_item;
-    int reset_ack = 1; 
+    struct send_action_args *args = (struct send_action_args* ) shared_buf_agent;
+    // struct probability_matrix_item p_item;
+    struct probability_matrix_item *p_item = (struct probability_matrix_item *) shared_buf_rl;
+    
+    // int *reset_ack = (int *) shared_buf_rl; 
 
     while(1){
 
+        // while(!args->valid) sbi_recv(AGENT_TID, 0, 0, YIELD); 
         // while(sbi_recv(AGENT_TID, &args, sizeof(struct send_action_args), YIELD));
-        sbi_recv(AGENT_TID, &args, sizeof(struct send_action_args), YIELD);
-        switch(args.msg_type){
+        // sbi_recv(AGENT_TID, &args, sizeof(struct send_action_args), YIELD);
+        sbi_recv(AGENT_TID, 0, 0, YIELD);
+
+        //Consume message 
+        args->valid = 0;
+        // printf("args->msg_type: %d\n",  args->msg_type);
+        switch(args->msg_type){
             case RESET:
                 // printf("In reset!\n");
                 env_reset();
-                sbi_send(AGENT_TID, &reset_ack, sizeof(int), YIELD);
+                // *reset_ack = 1447; 
+                // printf("[sim] reset_ack: %p\n", reset_ack);
+                // sbi_send(AGENT_TID, &reset_ack, sizeof(int), YIELD);
                 break;
             case STEP:
-                step(&p_item, args.action);
-                sbi_send(AGENT_TID, &p_item.ctx, sizeof(struct ctx), YIELD); 
+                // printf("action: %d!\n", args->action);
+                step(p_item, args->action);
+                // *reset_ack = 3892; 
+                // sbi_send(AGENT_TID, &p_item->ctx, sizeof(struct ctx), YIELD); 
                 break;
             case FINISH:
                 goto done;
