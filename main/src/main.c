@@ -242,13 +242,13 @@ int main(void)
     xTaskCreate(receiver_fn, "receiver", configMINIMAL_STACK_SIZE * 4, NULL, 25, &receiver);
 #endif
 
-    // xTaskCreate(aes_task, "aes", configMINIMAL_STACK_SIZE, NULL, 30, &taskCLI);
-    // xTaskCreate(dhrystone_task, "dhrystone", configMINIMAL_STACK_SIZE, NULL, 29, &taskCLI);
+    xTaskCreate(aes_task, "aes", configMINIMAL_STACK_SIZE, NULL, 30, &taskCLI);
+    xTaskCreate(dhrystone_task, "dhrystone", configMINIMAL_STACK_SIZE, NULL, 29, &taskCLI);
     // xTaskCreate(miniz_task, "miniz", configMINIMAL_STACK_SIZE, NULL, 28, &taskCLI);
-    // xTaskCreate(norx_task, "norx", configMINIMAL_STACK_SIZE, NULL, 27, &taskCLI);
-    // xTaskCreate(primes_task, "primes", configMINIMAL_STACK_SIZE, NULL, 26, &taskCLI);
-    // xTaskCreate(qsort_task, "qsort", configMINIMAL_STACK_SIZE, NULL, 25, &taskCLI);
-    // xTaskCreate(sha512_task, "sha512", configMINIMAL_STACK_SIZE, NULL, 24, &taskCLI);
+    xTaskCreate(norx_task, "norx", configMINIMAL_STACK_SIZE, NULL, 27, &taskCLI);
+    xTaskCreate(primes_task, "primes", configMINIMAL_STACK_SIZE, NULL, 26, &taskCLI);
+    xTaskCreate(qsort_task, "qsort", configMINIMAL_STACK_SIZE, NULL, 25, &taskCLI);
+    xTaskCreate(sha512_task, "sha512", configMINIMAL_STACK_SIZE, NULL, 24, &taskCLI);
 
     BaseType_t bt = xTaskCreate(vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void *)uart, 2, &taskCLI);
 

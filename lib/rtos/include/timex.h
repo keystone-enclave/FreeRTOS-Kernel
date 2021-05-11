@@ -7,7 +7,7 @@ static inline cycles_t get_cycles_inline(void)
 	cycles_t n;
 
 	__asm__ __volatile__ (
-		"rdcycle %0"
+		"rdtime %0"
 		: "=r" (n));
 	return n;
 }

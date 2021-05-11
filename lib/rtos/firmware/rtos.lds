@@ -71,12 +71,12 @@ SECTIONS
   } 
 
 
- /* .rv8 : {
+  .rv8 : {
      _rv8_start = .; 
     *(.miniz*)  
     . = ALIGN(0x1000);
     _rv8_end = .; 
-  } */
+  } 
 
 /*  .fibonacci : {
     _task_1_start = .; 
@@ -100,7 +100,7 @@ SECTIONS
     _agent_end = .; 
   } */
 
-  .shared_buffer : {
+ /* .shared_buffer : {
     _shared_buffer_start = .; 
     . = . + 4096; 
     . = ALIGN(0x1000);
@@ -112,6 +112,6 @@ SECTIONS
     *(.simulator*)  
     . = ALIGN(0x1000);
     _simulator_end = .; 
-  } 
+  } */
 
 }
