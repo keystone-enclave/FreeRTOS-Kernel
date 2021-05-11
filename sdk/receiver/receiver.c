@@ -25,7 +25,7 @@ void EAPP_ENTRY eapp_entry(int SENDER_TID){
 
     while(!shared_buf_receiver_cast[0]);
     memcpy((void *) shared_buf_sender, send_buf, DATA_SIZE);
-    memcpy(recv_buf,(void *) shared_buf_receiver, DATA_SIZE);
+    // memcpy(recv_buf,(void *) shared_buf_receiver, DATA_SIZE);
     sbi_recv(SENDER_TID, 0, 0, YIELD);
     // while(sbi_recv(SENDER_TID, recv_buf, DATA_SIZE, YIELD));
     // sbi_send(SENDER_TID, send_buf, DATA_SIZE, YIELD); 

@@ -279,9 +279,10 @@ uintptr_t shared_buf_receiver =(uintptr_t) &_shared_buffer_start;
 static void sender_task(void *pvParameters)
 {
     printf("shared_buf %p\n", &_shared_buffer_start);
+    char *shared_buf_sender_cast = (char *) shared_buf_sender;
     #define DATA_SIZE 512
     char send_buf[DATA_SIZE] = "hello";
-    char recv_buf[DATA_SIZE];
+    // char recv_buf[DATA_SIZE];
 
     // int x = 3; 
     // int y = 5; 
@@ -292,10 +293,10 @@ static void sender_task(void *pvParameters)
     // sbi_send(1, send_buf, DATA_SIZE, YIELD); 
     memcpy((void *) shared_buf_receiver, send_buf, DATA_SIZE);
     sbi_recv(1, 0, 0, YIELD);
-    memcpy(recv_buf, (void *) shared_buf_sender, DATA_SIZE);
+    // memcpy(recv_buf, (void *) shared_buf_sender, DATA_SIZE);
     // while(sbi_recv(1, recv_buf, DATA_SIZE, YIELD)) yield_general(); 
     et = get_cycles();
-    printf("h ==? %c \n", recv_buf[0]); 
+    printf("h ==? %c \n", shared_buf_sender_cast[0]); 
     printf("[msg-test-enclave] Duration: %lu\n", et -st);
     return_general();
 }
