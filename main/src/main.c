@@ -227,7 +227,7 @@ int main(void)
     printf("Receiver at 0x%p-0x%p!\n", &_receiver_start, &_receiver_end);
     
     xTaskCreate(sender_task, "sender", configMINIMAL_STACK_SIZE * 6, NULL, 30, &task_sender);
-    xTaskCreateEnclave((uintptr_t)&_receiver_start, elf_size_4, "receiver", 30, (void *const)0, &enclave_receiver);
+    xTaskCreateEnclave((uintptr_t)&_receiver_start, elf_size_4, "receiver", 20, (void *const)0, &enclave_receiver);
 
 #endif
 
@@ -242,13 +242,13 @@ int main(void)
     xTaskCreate(receiver_fn, "receiver", configMINIMAL_STACK_SIZE * 4, NULL, 25, &receiver);
 #endif
 
-    xTaskCreate(aes_task, "aes", configMINIMAL_STACK_SIZE, NULL, 30, &taskCLI);
-    xTaskCreate(dhrystone_task, "dhrystone", configMINIMAL_STACK_SIZE, NULL, 29, &taskCLI);
+    // xTaskCreate(aes_task, "aes", configMINIMAL_STACK_SIZE, NULL, 30, &taskCLI);
+    // xTaskCreate(dhrystone_task, "dhrystone", configMINIMAL_STACK_SIZE, NULL, 29, &taskCLI);
     // xTaskCreate(miniz_task, "miniz", configMINIMAL_STACK_SIZE, NULL, 28, &taskCLI);
-    xTaskCreate(norx_task, "norx", configMINIMAL_STACK_SIZE, NULL, 27, &taskCLI);
-    xTaskCreate(primes_task, "primes", configMINIMAL_STACK_SIZE, NULL, 26, &taskCLI);
-    xTaskCreate(qsort_task, "qsort", configMINIMAL_STACK_SIZE, NULL, 25, &taskCLI);
-    xTaskCreate(sha512_task, "sha512", configMINIMAL_STACK_SIZE, NULL, 24, &taskCLI);
+    // xTaskCreate(norx_task, "norx", configMINIMAL_STACK_SIZE, NULL, 27, &taskCLI);
+    // xTaskCreate(primes_task, "primes", configMINIMAL_STACK_SIZE, NULL, 26, &taskCLI);
+    // xTaskCreate(qsort_task, "qsort", configMINIMAL_STACK_SIZE, NULL, 25, &taskCLI);
+    // xTaskCreate(sha512_task, "sha512", configMINIMAL_STACK_SIZE, NULL, 24, &taskCLI);
 
     BaseType_t bt = xTaskCreate(vCommandConsoleTask, "CLI", configMINIMAL_STACK_SIZE, (void *)uart, 2, &taskCLI);
 
@@ -271,8 +271,14 @@ int main(void)
 }
 
 #ifdef MSG_TEST_ENCLAVE
+extern char *_shared_buffer_start;
+extern char *_shared_buffer_end;
+uintptr_t shared_buf_sender =(uintptr_t) ((uintptr_t)&_shared_buffer_start + 512);
+uintptr_t shared_buf_receiver =(uintptr_t) &_shared_buffer_start;
+
 static void sender_task(void *pvParameters)
 {
+    printf("shared_buf %p\n", &_shared_buffer_start);
     #define DATA_SIZE 512
     char send_buf[DATA_SIZE] = "hello";
     char recv_buf[DATA_SIZE];
@@ -283,8 +289,10 @@ static void sender_task(void *pvParameters)
     cycles_t st = get_cycles();
     cycles_t et;
 
-    sbi_send(1, send_buf, DATA_SIZE, YIELD); 
-    sbi_recv(1, recv_buf, DATA_SIZE, YIELD);
+    // sbi_send(1, send_buf, DATA_SIZE, YIELD); 
+    memcpy((void *) shared_buf_receiver, send_buf, DATA_SIZE);
+    sbi_recv(1, 0, 0, YIELD);
+    memcpy(recv_buf, (void *) shared_buf_sender, DATA_SIZE);
     // while(sbi_recv(1, recv_buf, DATA_SIZE, YIELD)) yield_general(); 
     et = get_cycles();
     printf("h ==? %c \n", recv_buf[0]); 

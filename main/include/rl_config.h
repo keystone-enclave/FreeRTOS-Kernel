@@ -19,10 +19,10 @@
 /* Task Agent <-> Enclave Driver*/
 // #define TA_ED_RL
 
-#define RV8
+// #define RV8
 
 // #define MSG_TEST_TASK
-// #define MSG_TEST_ENCLAVE
+#define MSG_TEST_ENCLAVE
 
 
 #ifdef EA_ED_RL
